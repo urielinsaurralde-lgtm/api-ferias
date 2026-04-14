@@ -1,3 +1,6 @@
+const multer = require("multer");
+
+const upload = multer({ dest: "uploads/" });
 const express = require("express");
 const mysql = require("mysql2");
 const cors = require("cors");
@@ -18,13 +21,15 @@ const db = mysql.createPool({
 });
 
 // 👉 GUARDAR DATOS
-app.post("/guardar", (req, res) => {
+app.post("/guardar", upload.single("foto"), (req, res) => {
+
   const data = req.body;
+  const foto = req.file ? req.file.filename : null;
 
   const sql = `
-    INSERT INTO productores
-    (nombre, dni, email, renspa, actividad, feria, lat, lng)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO productores 
+    (nombre, dni, email, renspa, actividad, feria, lat, lng, foto)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   db.query(sql, [
@@ -35,16 +40,17 @@ app.post("/guardar", (req, res) => {
     data.actividad,
     data.feria,
     data.lat,
-    data.lng
+    data.lng,
+    foto
   ], (err) => {
     if (err) {
-      console.log("ERROR MYSQL:", err);
-      return res.status(500).send(err.message);
+      console.log(err);
+      return res.status(500).send("Error");
     }
     res.send("OK");
   });
-});
 
+});
 // 👉 OBTENER DATOS
 app.get("/productores", (req, res) => {
   db.query("SELECT * FROM productores", (err, results) => {

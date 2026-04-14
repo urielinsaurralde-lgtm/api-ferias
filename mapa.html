@@ -8,57 +8,142 @@
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 
-  <!-- CLUSTER -->
+  <!-- Cluster -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css">
+
+  <!-- Iconos -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 
   <style>
     body {
       margin: 0;
-      font-family: Arial;
+      font-family: 'Segoe UI', sans-serif;
     }
 
     #map {
       height: 100vh;
     }
 
-    #filtro {
-      position: absolute;
+    #bottomNav {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      background: white;
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0;
+      box-shadow: 0 -3px 10px rgba(0,0,0,0.2);
       z-index: 1000;
-      margin: 10px;
-      padding: 5px;
     }
 
-    #panel {
+    .nav-btn {
+      text-align: center;
+      font-size: 12px;
+      color: #555;
+      cursor: pointer;
+    }
+
+    .nav-btn i {
+      font-size: 18px;
+      display: block;
+      margin-bottom: 3px;
+    }
+
+    .nav-btn:hover {
+      color: #007bff;
+    }
+
+    #panelBox, #filtroBox, #buscadorBox {
       position: absolute;
-      top: 50px;
+      bottom: 70px;
       left: 10px;
-      z-index: 1000;
+      right: 10px;
       background: white;
+      border-radius: 10px;
       padding: 10px;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.2);
-      font-size: 14px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      display: none;
+      z-index: 1000;
+    }
+
+    #stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .stat-item {
+      background: #f1f1f1;
+      padding: 5px 8px;
+      border-radius: 6px;
+      font-size: 12px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      margin-top: 5px;
     }
   </style>
 </head>
 
 <body>
 
-<select id="filtro" onchange="cargarDatos()">
-  <option value="">Todas las ferias</option>
-</select>
+<div id="map"></div>
 
-<div id="panel">
+<!-- 🔍 BUSCADOR -->
+<div id="buscadorBox">
+  <b>🔍 Buscar productor</b>
+  <input type="text" id="buscador" placeholder="Escribí un nombre..." onkeyup="cargarDatos()">
+</div>
+
+<!-- 📊 PANEL -->
+<div id="panelBox">
   <b>📊 Productores por feria</b>
   <div id="stats"></div>
 </div>
 
-<div id="map"></div>
+<!-- 🔎 FILTRO -->
+<div id="filtroBox">
+  <select id="filtro" onchange="cargarDatos()">
+    <option value="">Todas</option>
+  </select>
+</div>
+
+<!-- 🔽 NAV -->
+<div id="bottomNav">
+
+  <div class="nav-btn" onclick="mostrarMapa()">
+    <i class="fa fa-map"></i>
+    Mapa
+  </div>
+
+  <div class="nav-btn" onclick="toggleBuscador()">
+    <i class="fa fa-search"></i>
+    Buscar
+  </div>
+
+  <div class="nav-btn" onclick="toggleFiltro()">
+    <i class="fa fa-filter"></i>
+    Filtro
+  </div>
+
+  <div class="nav-btn" onclick="togglePanel()">
+    <i class="fa fa-chart-bar"></i>
+    Stats
+  </div>
+
+  <div class="nav-btn" onclick="irUbicacion()">
+    <i class="fa fa-location-arrow"></i>
+    Ubicación
+  </div>
+
+</div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
-<!-- CLUSTER JS -->
 <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
 
 <script>
@@ -70,40 +155,42 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: 'OpenStreetMap'
 }).addTo(map);
 
-// 🔥 CLUSTER
 let markers = L.markerClusterGroup();
 map.addLayer(markers);
+
+let miLat = null;
+let miLng = null;
 
 function cargarDatos() {
   fetch(API)
     .then(res => res.json())
     .then(data => {
 
-      // limpiar clusters
       markers.clearLayers();
 
       let filtro = document.getElementById("filtro").value;
+      let texto = document.getElementById("buscador").value.toLowerCase();
+
       let ferias = new Set();
       let conteo = {};
 
       data.forEach(p => {
 
         ferias.add(p.feria);
-
-        // 📊 conteo
         conteo[p.feria] = (conteo[p.feria] || 0) + 1;
 
-        // filtro
         if (filtro && p.feria !== filtro) return;
 
-        if (p.lat && p.lng) {
+        // 🔍 filtro por nombre
+        if (texto && !p.nombre.toLowerCase().includes(texto)) return;
 
+        if (p.lat && p.lng) {
           let marker = L.marker([p.lat, p.lng]);
 
           marker.bindPopup(`
             <b>${p.nombre}</b><br>
-            Actividad: ${p.actividad}<br>
-            Feria: ${p.feria}
+            ${p.actividad}<br>
+            ${p.feria}
           `);
 
           markers.addLayer(marker);
@@ -111,9 +198,8 @@ function cargarDatos() {
 
       });
 
-      // llenar filtro sin duplicar
+      // llenar filtro
       let select = document.getElementById("filtro");
-
       if (select.options.length === 1) {
         ferias.forEach(f => {
           let opt = document.createElement("option");
@@ -123,38 +209,63 @@ function cargarDatos() {
         });
       }
 
-      // 📊 panel
+      // stats
       let statsDiv = document.getElementById("stats");
       statsDiv.innerHTML = "";
 
       for (let feria in conteo) {
         let item = document.createElement("div");
+        item.className = "stat-item";
         item.innerText = `${feria}: ${conteo[feria]}`;
         statsDiv.appendChild(item);
       }
 
-    })
-    .catch(err => console.log("Error:", err));
+    });
 }
 
 cargarDatos();
+setInterval(cargarDatos, 10000);
 
-// 🔄 auto actualización
-setInterval(() => {
-  cargarDatos();
-}, 10000);
-
-// 📍 ubicación actual
+// ubicación
 navigator.geolocation.getCurrentPosition(pos => {
-  let lat = pos.coords.latitude;
-  let lng = pos.coords.longitude;
+  miLat = pos.coords.latitude;
+  miLng = pos.coords.longitude;
 
-  L.marker([lat, lng]).addTo(map)
-    .bindPopup("📍 Estás acá")
-    .openPopup();
-
-  map.setView([lat, lng], 14);
+  L.marker([miLat, miLng]).addTo(map)
+    .bindPopup("📍 Estás acá");
 });
+
+// botones UI
+function togglePanel() {
+  ocultarTodo();
+  document.getElementById("panelBox").style.display = "block";
+}
+
+function toggleFiltro() {
+  ocultarTodo();
+  document.getElementById("filtroBox").style.display = "block";
+}
+
+function toggleBuscador() {
+  ocultarTodo();
+  document.getElementById("buscadorBox").style.display = "block";
+}
+
+function mostrarMapa() {
+  ocultarTodo();
+}
+
+function ocultarTodo() {
+  document.getElementById("panelBox").style.display = "none";
+  document.getElementById("filtroBox").style.display = "none";
+  document.getElementById("buscadorBox").style.display = "none";
+}
+
+function irUbicacion() {
+  if (miLat && miLng) {
+    map.setView([miLat, miLng], 14);
+  }
+}
 </script>
 
 </body>
