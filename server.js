@@ -16,16 +16,17 @@ const db = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10
 });
-// endpoint
-app.get("/productores", (req, res) => {
-  db.query("SELECT * FROM productores", (err, results) => {
-    if (err) {
-      console.log("ERROR MYSQL:", err);
-      return res.status(500).send(err.message);
-    }
-    res.json(results);
-  });
-});
+
+// 👉 GUARDAR DATOS
+app.post("/guardar", (req, res) => {
+  const data = req.body;
+
+  const sql = `
+    INSERT INTO productores
+    (nombre, dni, email, renspa, actividad, feria, lat, lng)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `;
+
   db.query(sql, [
     data.nombre,
     data.dni,
@@ -37,21 +38,31 @@ app.get("/productores", (req, res) => {
     data.lng
   ], (err) => {
     if (err) {
-      console.log(err);
-      return res.status(500).send("Error");
+      console.log("ERROR MYSQL:", err);
+      return res.status(500).send(err.message);
     }
     res.send("OK");
   });
 });
 
-app.listen(3000, () => {
-  console.log("🚀 Servidor en http://localhost:3000");
+// 👉 OBTENER DATOS
+app.get("/productores", (req, res) => {
+  db.query("SELECT * FROM productores", (err, results) => {
+    if (err) {
+      console.log("ERROR MYSQL:", err);
+      return res.status(500).send(err.message);
+    }
+    res.json(results);
+  });
 });
-app.get("/", (req, res) => {
-  res.send("Servidor funcionando 🚀");
-});
-const PORT = process.env.PORT || 3000;
 
+// 👉 TEST
+app.get("/", (req, res) => {
+  res.send("API funcionando 🚀");
+});
+
+// 👉 PUERTO (IMPORTANTE PARA RENDER)
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log("Servidor corriendo");
+  console.log("Servidor corriendo en puerto " + PORT);
 });
