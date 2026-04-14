@@ -17,15 +17,15 @@ const db = mysql.createPool({
   connectionLimit: 10
 });
 // endpoint
-app.post("/guardar", (req, res) => {
-  const data = req.body;
-
-  const sql = `
-    INSERT INTO productores 
-    (nombre, dni, email, renspa, actividad, feria, lat, lng)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `;
-
+app.get("/productores", (req, res) => {
+  db.query("SELECT * FROM productores", (err, results) => {
+    if (err) {
+      console.log("ERROR MYSQL:", err);
+      return res.status(500).send(err.message);
+    }
+    res.json(results);
+  });
+});
   db.query(sql, [
     data.nombre,
     data.dni,
