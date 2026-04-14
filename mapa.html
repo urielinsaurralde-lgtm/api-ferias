@@ -8,6 +8,10 @@
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 
+  <!-- CLUSTER -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css">
+
   <style>
     body {
       margin: 0;
@@ -54,6 +58,9 @@
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
+<!-- CLUSTER JS -->
+<script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+
 <script>
 const API = "https://api-ferias-da8q.onrender.com/productores";
 
@@ -63,16 +70,17 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: 'OpenStreetMap'
 }).addTo(map);
 
-let markers = [];
+// 🔥 CLUSTER
+let markers = L.markerClusterGroup();
+map.addLayer(markers);
 
 function cargarDatos() {
   fetch(API)
     .then(res => res.json())
     .then(data => {
 
-      // limpiar mapa
-      markers.forEach(m => map.removeLayer(m));
-      markers = [];
+      // limpiar clusters
+      markers.clearLayers();
 
       let filtro = document.getElementById("filtro").value;
       let ferias = new Set();
@@ -82,7 +90,7 @@ function cargarDatos() {
 
         ferias.add(p.feria);
 
-        // 📊 contar productores
+        // 📊 conteo
         conteo[p.feria] = (conteo[p.feria] || 0) + 1;
 
         // filtro
@@ -90,7 +98,7 @@ function cargarDatos() {
 
         if (p.lat && p.lng) {
 
-          let marker = L.marker([p.lat, p.lng]).addTo(map);
+          let marker = L.marker([p.lat, p.lng]);
 
           marker.bindPopup(`
             <b>${p.nombre}</b><br>
@@ -98,12 +106,12 @@ function cargarDatos() {
             Feria: ${p.feria}
           `);
 
-          markers.push(marker);
+          markers.addLayer(marker);
         }
 
       });
 
-      // llenar select (sin duplicar)
+      // llenar filtro sin duplicar
       let select = document.getElementById("filtro");
 
       if (select.options.length === 1) {
@@ -115,7 +123,7 @@ function cargarDatos() {
         });
       }
 
-      // 📊 mostrar estadísticas
+      // 📊 panel
       let statsDiv = document.getElementById("stats");
       statsDiv.innerHTML = "";
 
@@ -131,7 +139,7 @@ function cargarDatos() {
 
 cargarDatos();
 
-// 🔄 actualización automática cada 10 segundos
+// 🔄 auto actualización
 setInterval(() => {
   cargarDatos();
 }, 10000);
