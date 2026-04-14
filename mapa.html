@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <meta charset="utf-8" />
   <title>Mapa de Productores</title>
@@ -12,12 +13,42 @@
       margin: 0;
       font-family: Arial;
     }
+
     #map {
       height: 100vh;
     }
+
+    #filtro {
+      position: absolute;
+      z-index: 1000;
+      margin: 10px;
+      padding: 5px;
+    }
+
+    #panel {
+      position: absolute;
+      top: 50px;
+      left: 10px;
+      z-index: 1000;
+      background: white;
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      font-size: 14px;
+    }
   </style>
 </head>
+
 <body>
+
+<select id="filtro" onchange="cargarDatos()">
+  <option value="">Todas las ferias</option>
+</select>
+
+<div id="panel">
+  <b>📊 Productores por feria</b>
+  <div id="stats"></div>
+</div>
 
 <div id="map"></div>
 
@@ -26,41 +57,96 @@
 <script>
 const API = "https://api-ferias-da8q.onrender.com/productores";
 
-// 🗺️ crear mapa centrado (Argentina aprox)
 const map = L.map('map').setView([-31.7, -60.5], 12);
 
-// mapa base
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: 'OpenStreetMap'
 }).addTo(map);
 
-// 📡 traer datos
-fetch(API)
-  .then(res => res.json())
-  .then(data => {
+let markers = [];
 
-    data.forEach(p => {
+function cargarDatos() {
+  fetch(API)
+    .then(res => res.json())
+    .then(data => {
 
-      if (p.lat && p.lng) {
+      // limpiar mapa
+      markers.forEach(m => map.removeLayer(m));
+      markers = [];
 
-        const marker = L.marker([p.lat, p.lng]).addTo(map);
+      let filtro = document.getElementById("filtro").value;
+      let ferias = new Set();
+      let conteo = {};
 
-        marker.bindPopup(`
-          <b>${p.nombre}</b><br>
-          DNI: ${p.dni}<br>
-          Actividad: ${p.actividad}<br>
-          Feria: ${p.feria}
-        `);
+      data.forEach(p => {
 
+        ferias.add(p.feria);
+
+        // 📊 contar productores
+        conteo[p.feria] = (conteo[p.feria] || 0) + 1;
+
+        // filtro
+        if (filtro && p.feria !== filtro) return;
+
+        if (p.lat && p.lng) {
+
+          let marker = L.marker([p.lat, p.lng]).addTo(map);
+
+          marker.bindPopup(`
+            <b>${p.nombre}</b><br>
+            Actividad: ${p.actividad}<br>
+            Feria: ${p.feria}
+          `);
+
+          markers.push(marker);
+        }
+
+      });
+
+      // llenar select (sin duplicar)
+      let select = document.getElementById("filtro");
+
+      if (select.options.length === 1) {
+        ferias.forEach(f => {
+          let opt = document.createElement("option");
+          opt.value = f;
+          opt.text = f;
+          select.appendChild(opt);
+        });
       }
 
-    });
+      // 📊 mostrar estadísticas
+      let statsDiv = document.getElementById("stats");
+      statsDiv.innerHTML = "";
 
-  })
-  .catch(err => {
-    console.log("Error:", err);
-  });
+      for (let feria in conteo) {
+        let item = document.createElement("div");
+        item.innerText = `${feria}: ${conteo[feria]}`;
+        statsDiv.appendChild(item);
+      }
 
+    })
+    .catch(err => console.log("Error:", err));
+}
+
+cargarDatos();
+
+// 🔄 actualización automática cada 10 segundos
+setInterval(() => {
+  cargarDatos();
+}, 10000);
+
+// 📍 ubicación actual
+navigator.geolocation.getCurrentPosition(pos => {
+  let lat = pos.coords.latitude;
+  let lng = pos.coords.longitude;
+
+  L.marker([lat, lng]).addTo(map)
+    .bindPopup("📍 Estás acá")
+    .openPopup();
+
+  map.setView([lat, lng], 14);
+});
 </script>
 
 </body>
