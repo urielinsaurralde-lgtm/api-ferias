@@ -8,15 +8,14 @@ app.use(express.json());
 
 // 🔗 conexión MySQL
 const db = mysql.createPool({
-  host: "localhost",
+  host: "mysql.railway.internal",
   user: "root",
-  password: "",
-  database: "ferias",
+  password: "IxlfPUfDAujbIQjAtRTgMsrpEaZMVrjb",
+  database: "railway",
+  port: 3306,
   waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
+  connectionLimit: 10
 });
-
 // endpoint
 app.post("/guardar", (req, res) => {
   const data = req.body;
@@ -50,4 +49,9 @@ app.listen(3000, () => {
 });
 app.get("/", (req, res) => {
   res.send("Servidor funcionando 🚀");
+});
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log("Servidor corriendo");
 });
