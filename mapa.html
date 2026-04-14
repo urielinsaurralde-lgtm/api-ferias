@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Mapa de Productores</title>
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial;
+    }
+    #map {
+      height: 100vh;
+    }
+  </style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+const API = "https://api-ferias-da8q.onrender.com/productores";
+
+// 🗺️ crear mapa centrado (Argentina aprox)
+const map = L.map('map').setView([-31.7, -60.5], 12);
+
+// mapa base
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: 'OpenStreetMap'
+}).addTo(map);
+
+// 📡 traer datos
+fetch(API)
+  .then(res => res.json())
+  .then(data => {
+
+    data.forEach(p => {
+
+      if (p.lat && p.lng) {
+
+        const marker = L.marker([p.lat, p.lng]).addTo(map);
+
+        marker.bindPopup(`
+          <b>${p.nombre}</b><br>
+          DNI: ${p.dni}<br>
+          Actividad: ${p.actividad}<br>
+          Feria: ${p.feria}
+        `);
+
+      }
+
+    });
+
+  })
+  .catch(err => {
+    console.log("Error:", err);
+  });
+
+</script>
+
+</body>
+</html>
