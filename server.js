@@ -41,7 +41,7 @@ app.post("/guardar", upload.single("foto"), async (req, res) => {
     if (req.file) {
       const result = await cloudinary.uploader.upload(req.file.path, {
         transformation: [
-          { width: 800, height: 800, crop: "limit" },
+          { width: 1200, height: 1200, crop: "limit" },
           { quality: "auto" },
           { format: "webp" }
         ]
