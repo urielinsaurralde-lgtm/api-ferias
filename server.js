@@ -19,7 +19,7 @@ cloudinary.config({
   api_secret: "JR7-Bqp_Ekm0-H70kZR83iH3jJ8"
 });
 
-// 🔗 MYSQL (IMPORTANTE: usa datos reales si falla)
+// 🔗 MYSQL
 const db = mysql.createPool({
   host: process.env.DB_HOST || "monorail.proxy.rlwy.net",
   user: process.env.DB_USER || "root",
@@ -37,12 +37,19 @@ app.post("/guardar", upload.single("foto"), async (req, res) => {
     const data = req.body;
     let fotoUrl = null;
 
-    // 📸 subir imagen a cloudinary
+    // 📸 subir imagen optimizada a cloudinary
     if (req.file) {
-      const result = await cloudinary.uploader.upload(req.file.path);
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        transformation: [
+          { width: 800, height: 800, crop: "limit" },
+          { quality: "auto" },
+          { format: "webp" }
+        ]
+      });
+
       fotoUrl = result.secure_url;
 
-      // 🧹 borrar archivo local (MUY IMPORTANTE)
+      // 🧹 borrar archivo local
       fs.unlinkSync(req.file.path);
     }
 
