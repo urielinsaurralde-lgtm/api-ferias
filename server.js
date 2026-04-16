@@ -35,6 +35,12 @@ const db = mysql.createPool({
 app.post("/guardar", upload.single("foto"), async (req, res) => {
   try {
     const data = req.body;
+
+    // 📅 FECHA CORRECTA ARGENTINA (ACÁ ES DONDE VA)
+    const fecha = new Date().toLocaleString("es-AR", {
+      timeZone: "America/Argentina/Buenos_Aires"
+    });
+
     let fotoUrl = null;
 
     // 📸 subir imagen optimizada a cloudinary
@@ -43,7 +49,7 @@ app.post("/guardar", upload.single("foto"), async (req, res) => {
         transformation: [
           { width: 1800, height: 1800, crop: "limit" },
           { quality: "auto" },
-          { format: "webp" }
+          { fetch_format: "auto" }
         ]
       });
 
@@ -55,8 +61,8 @@ app.post("/guardar", upload.single("foto"), async (req, res) => {
 
     const sql = `
       INSERT INTO productores 
-      (nombre, dni, email, renspa, actividad, feria, lat, lng, foto)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (nombre, dni, email, renspa, actividad, feria, lat, lng, foto, fecha)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     db.query(sql, [
@@ -68,7 +74,8 @@ app.post("/guardar", upload.single("foto"), async (req, res) => {
       data.feria,
       data.lat,
       data.lng,
-      fotoUrl
+      fotoUrl,
+      fecha
     ], (err) => {
       if (err) {
         console.log("ERROR DB:", err);
@@ -87,7 +94,7 @@ app.post("/guardar", upload.single("foto"), async (req, res) => {
 
 // 👉 OBTENER DATOS
 app.get("/productores", (req, res) => {
-  db.query("SELECT * FROM productores", (err, results) => {
+  db.query("SELECT * FROM productores ORDER BY id DESC", (err, results) => {
     if (err) {
       console.log("ERROR MYSQL:", err);
       return res.status(500).send(err.message);
