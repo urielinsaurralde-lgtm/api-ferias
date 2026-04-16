@@ -115,3 +115,16 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("Servidor corriendo en puerto " + PORT);
 });
+// 👉 ELIMINAR
+app.delete("/productores/:id", (req, res) => {
+  const id = req.params.id;
+
+  db.query("DELETE FROM productores WHERE id = ?", [id], (err) => {
+    if (err) {
+      console.log(err);
+      return res.status(500).send("Error");
+    }
+
+    res.send("Eliminado");
+  });
+});
