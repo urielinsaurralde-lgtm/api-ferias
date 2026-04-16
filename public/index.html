@@ -127,9 +127,8 @@ img {
 <!-- PANEL -->
 <div id="panel">
 
-  <h2>📊 Panel PRO</h2>
+  <h2>📊 Panel ADMIN</h2>
 
-  <!-- CONTROLES -->
   <div class="topbar">
     <input id="buscar" placeholder="Buscar nombre o DNI">
     <select id="filtroFeria">
@@ -140,25 +139,16 @@ img {
     <button onclick="miUbicacion()">📍 Mi ubicación</button>
   </div>
 
-  <!-- STATS -->
   <div class="stats">
     Total registros: <b id="total"></b>
   </div>
 
-  <!-- MAPA -->
   <div id="map"></div>
 
-  <!-- TABLA -->
+  <!-- TABLA DINÁMICA -->
   <table class="table">
     <thead>
-      <tr>
-        <th>Nombre</th>
-        <th>DNI</th>
-        <th>Actividad</th>
-        <th>Feria</th>
-        <th>Foto</th>
-        <th>Acción</th>
-      </tr>
+      <tr id="thead"></tr>
     </thead>
     <tbody id="tabla"></tbody>
   </table>
@@ -223,30 +213,62 @@ function aplicarFiltros() {
   render(filtrados);
 }
 
-/* RENDER */
+/* RENDER DINÁMICO */
 function render(data) {
   const tabla = document.getElementById("tabla");
+  const thead = document.getElementById("thead");
+
   tabla.innerHTML = "";
+  thead.innerHTML = "";
 
   cluster.clearLayers();
-
   document.getElementById("total").innerText = data.length;
+
+  if (data.length === 0) return;
+
+  const columnas = Object.keys(data[0]);
+
+  // encabezados
+  columnas.forEach(col => {
+    thead.innerHTML += `<th>${col.toUpperCase()}</th>`;
+  });
+  thead.innerHTML += "<th>ACCIONES</th>";
 
   let bounds = [];
 
   data.forEach(p => {
 
-    tabla.innerHTML += `
-      <tr>
-        <td>${p.nombre}</td>
-        <td>${p.dni}</td>
-        <td>${p.actividad}</td>
-        <td>${p.feria}</td>
-        <td>${p.foto ? `<img src="${p.foto}">` : ""}</td>
-        <td><button class="delete" onclick="borrar(${p.id})">X</button></td>
-      </tr>
-    `;
+    let fila = "<tr>";
 
+    columnas.forEach(col => {
+
+      let valor = p[col];
+
+      if (col === "foto" && valor) {
+        valor = `<img src="${valor}">`;
+      }
+
+      else if (col === "lat" && p.lat && p.lng) {
+        valor = `<a href="https://maps.google.com/?q=${p.lat},${p.lng}" target="_blank">📍 Ver</a>`;
+      }
+
+      else if (col === "lng") {
+        return;
+      }
+
+      else if (!valor) {
+        valor = "-";
+      }
+
+      fila += `<td>${valor}</td>`;
+    });
+
+    fila += `<td><button class="delete" onclick="borrar(${p.id})">X</button></td>`;
+    fila += "</tr>";
+
+    tabla.innerHTML += fila;
+
+    // MAPA
     if (p.lat && p.lng) {
       const marker = L.marker([p.lat, p.lng])
         .bindPopup(`<b>${p.nombre}</b><br>${p.feria}`);
@@ -254,6 +276,7 @@ function render(data) {
       cluster.addLayer(marker);
       bounds.push([p.lat, p.lng]);
     }
+
   });
 
   if (bounds.length) map.fitBounds(bounds);
