@@ -12,6 +12,8 @@
 <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
 
 <style>
+
+/* BASE */
 body {
   font-family: Arial;
   background: #0f172a;
@@ -20,60 +22,57 @@ body {
   padding: 10px;
 }
 
+#panel {
+  display: none;
+  max-width: 1200px;
+  margin: auto;
+}
+
 /* LOGIN */
 .login {
-  max-width: 300px;
-  margin: 100px auto;
+  max-width: 320px;
+  margin: 80px auto;
   text-align: center;
 }
 
-.login input {
+.login input, .login button {
   width: 100%;
-  padding: 12px;
+  padding: 14px;
   margin: 10px 0;
-  border-radius: 10px;
+  border-radius: 12px;
   border: none;
+  font-size: 16px;
 }
 
-.login button {
-  width: 100%;
-  padding: 12px;
-  border-radius: 10px;
-  border: none;
-  background: #22c55e;
-  color: white;
-  font-weight: bold;
-}
-
-/* PANEL */
-#panel {
-  display: none;
-}
-
+/* TOPBAR */
 .topbar {
   display: flex;
   gap: 10px;
-  margin-bottom: 10px;
   flex-wrap: wrap;
+  margin-bottom: 10px;
 }
 
-.topbar input, .topbar select {
-  padding: 10px;
-  border-radius: 10px;
+.topbar input, 
+.topbar select, 
+.topbar button {
+  flex: 1;
+  min-width: 120px;
+  padding: 12px;
+  border-radius: 12px;
   border: none;
+  font-size: 14px;
 }
 
 .topbar button {
   background: #3b82f6;
   color: white;
-  border: none;
-  padding: 10px;
-  border-radius: 10px;
 }
 
 /* MAPA */
 #map {
-  height: 350px;
+  width: 100%;
+  height: 40vh;
+  min-height: 250px;
   border-radius: 15px;
   margin-bottom: 10px;
 }
@@ -81,22 +80,31 @@ body {
 /* STATS */
 .stats {
   margin-bottom: 10px;
+  font-size: 14px;
 }
 
 /* TABLA */
+.table-container {
+  overflow-x: auto;
+}
+
 .table {
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
+  min-width: 600px;
 }
 
 .table th, .table td {
   padding: 8px;
   border-bottom: 1px solid #334155;
+  text-align: left;
 }
 
 .table th {
   background: #1e293b;
+  position: sticky;
+  top: 0;
 }
 
 img {
@@ -108,9 +116,36 @@ img {
   background: #ef4444;
   color: white;
   border: none;
-  padding: 5px;
-  border-radius: 6px;
+  padding: 6px;
+  border-radius: 8px;
 }
+
+/* MOBILE */
+@media (max-width: 600px) {
+
+  h2 {
+    font-size: 18px;
+  }
+
+  .topbar {
+    flex-direction: column;
+  }
+
+  .topbar input,
+  .topbar select,
+  .topbar button {
+    width: 100%;
+  }
+
+  .table {
+    font-size: 12px;
+  }
+
+  img {
+    width: 40px;
+  }
+}
+
 </style>
 </head>
 
@@ -145,13 +180,15 @@ img {
 
   <div id="map"></div>
 
-  <!-- TABLA DINÁMICA -->
-  <table class="table">
-    <thead>
-      <tr id="thead"></tr>
-    </thead>
-    <tbody id="tabla"></tbody>
-  </table>
+  <!-- TABLA RESPONSIVE -->
+  <div class="table-container">
+    <table class="table">
+      <thead>
+        <tr id="thead"></tr>
+      </thead>
+      <tbody id="tabla"></tbody>
+    </table>
+  </div>
 
 </div>
 
@@ -213,7 +250,7 @@ function aplicarFiltros() {
   render(filtrados);
 }
 
-/* RENDER DINÁMICO */
+/* RENDER */
 function render(data) {
   const tabla = document.getElementById("tabla");
   const thead = document.getElementById("thead");
@@ -228,7 +265,6 @@ function render(data) {
 
   const columnas = Object.keys(data[0]);
 
-  // encabezados
   columnas.forEach(col => {
     thead.innerHTML += `<th>${col.toUpperCase()}</th>`;
   });
@@ -247,15 +283,12 @@ function render(data) {
       if (col === "foto" && valor) {
         valor = `<img src="${valor}">`;
       }
-
       else if (col === "lat" && p.lat && p.lng) {
         valor = `<a href="https://maps.google.com/?q=${p.lat},${p.lng}" target="_blank">📍 Ver</a>`;
       }
-
       else if (col === "lng") {
         return;
       }
-
       else if (!valor) {
         valor = "-";
       }
@@ -268,7 +301,6 @@ function render(data) {
 
     tabla.innerHTML += fila;
 
-    // MAPA
     if (p.lat && p.lng) {
       const marker = L.marker([p.lat, p.lng])
         .bindPopup(`<b>${p.nombre}</b><br>${p.feria}`);
@@ -290,7 +322,7 @@ async function borrar(id) {
   cargar();
 }
 
-/* MI UBICACION */
+/* UBICACION */
 function miUbicacion() {
   navigator.geolocation.getCurrentPosition(pos => {
     const lat = pos.coords.latitude;
