@@ -4,10 +4,14 @@ const cors = require("cors");
 const multer = require("multer");
 const cloudinary = require("cloudinary").v2;
 const fs = require("fs");
+const path = require("path");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// 📁 SERVIR PANEL (IMPORTANTE)
+app.use(express.static(path.join(__dirname, "public")));
 
 // 📸 MULTER (temporal)
 const upload = multer({ dest: "uploads/" });
@@ -30,24 +34,23 @@ const db = mysql.createPool({
   connectionLimit: 10
 });
 
-
 // 👉 GUARDAR DATOS
 app.post("/guardar", upload.single("foto"), async (req, res) => {
   try {
     const data = req.body;
 
-    // 📅 FECHA CORRECTA ARGENTINA (ACÁ ES DONDE VA)
+    // 📅 fecha Argentina
     const fecha = new Date().toLocaleString("es-AR", {
       timeZone: "America/Argentina/Buenos_Aires"
     });
 
     let fotoUrl = null;
 
-    // 📸 subir imagen optimizada a cloudinary
+    // 📸 subir imagen optimizada
     if (req.file) {
       const result = await cloudinary.uploader.upload(req.file.path, {
         transformation: [
-          { width: 1800, height: 1800, crop: "limit" },
+          { width: 800, height: 800, crop: "limit" },
           { quality: "auto" },
           { fetch_format: "auto" }
         ]
@@ -91,7 +94,6 @@ app.post("/guardar", upload.single("foto"), async (req, res) => {
   }
 });
 
-
 // 👉 OBTENER DATOS
 app.get("/productores", (req, res) => {
   db.query("SELECT * FROM productores ORDER BY id DESC", (err, results) => {
@@ -103,28 +105,27 @@ app.get("/productores", (req, res) => {
   });
 });
 
-
-// 👉 TEST
-app.get("/", (req, res) => {
-  res.send("API funcionando 🚀");
-});
-
-
-// 👉 PUERTO (RENDER)
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log("Servidor corriendo en puerto " + PORT);
-});
 // 👉 ELIMINAR
 app.delete("/productores/:id", (req, res) => {
   const id = req.params.id;
 
   db.query("DELETE FROM productores WHERE id = ?", [id], (err) => {
     if (err) {
-      console.log(err);
+      console.log("ERROR DELETE:", err);
       return res.status(500).send("Error");
     }
 
     res.send("Eliminado");
   });
+});
+
+// 👉 TEST
+app.get("/test", (req, res) => {
+  res.send("API funcionando 🚀");
+});
+
+// 👉 PUERTO (RENDER)
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log("Servidor corriendo en puerto " + PORT);
 });

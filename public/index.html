@@ -12,6 +12,36 @@ body {
   padding: 15px;
 }
 
+/* LOGIN */
+.login {
+  max-width: 300px;
+  margin: 100px auto;
+  text-align: center;
+}
+
+.login input {
+  width: 100%;
+  padding: 12px;
+  margin: 10px 0;
+  border-radius: 10px;
+  border: none;
+}
+
+.login button {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  background: #22c55e;
+  color: white;
+  font-weight: bold;
+}
+
+/* PANEL */
+#panel {
+  display: none;
+}
+
 h2 {
   text-align: center;
 }
@@ -50,27 +80,56 @@ button {
 
 <body>
 
-<h2>📊 Panel Admin</h2>
+<!-- 🔐 LOGIN -->
+<div id="login" class="login">
+  <h2>🔐 Admin</h2>
+  <input id="user" placeholder="Usuario">
+  <input id="pass" type="password" placeholder="Contraseña">
+  <button onclick="login()">Ingresar</button>
+</div>
 
-<table class="table">
-<thead>
-<tr>
-<th>Nombre</th>
-<th>DNI</th>
-<th>Actividad</th>
-<th>Feria</th>
-<th>Foto</th>
-<th>Ubicación</th>
-<th>Fecha</th>
-<th>Acción</th>
-</tr>
-</thead>
-<tbody id="tabla"></tbody>
-</table>
+<!-- 📊 PANEL -->
+<div id="panel">
+  <h2>📊 Panel Admin</h2>
+
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>DNI</th>
+        <th>Actividad</th>
+        <th>Feria</th>
+        <th>Foto</th>
+        <th>Ubicación</th>
+        <th>Fecha</th>
+        <th>Acción</th>
+      </tr>
+    </thead>
+    <tbody id="tabla"></tbody>
+  </table>
+</div>
 
 <script>
 
 const API = "https://api-ferias-da8q.onrender.com";
+
+// 🔐 credenciales
+const USER = "admin";
+const PASS = "1234";
+
+/* 🔐 login */
+function login() {
+  const u = document.getElementById("user").value;
+  const p = document.getElementById("pass").value;
+
+  if (u === USER && p === PASS) {
+    document.getElementById("login").style.display = "none";
+    document.getElementById("panel").style.display = "block";
+    cargar();
+  } else {
+    alert("❌ Usuario o contraseña incorrectos");
+  }
+}
 
 /* 📥 cargar datos */
 async function cargar() {
@@ -114,10 +173,11 @@ async function borrar(id) {
 }
 
 /* 🔄 auto refresh */
-setInterval(cargar, 5000);
-
-/* inicio */
-cargar();
+setInterval(() => {
+  if (document.getElementById("panel").style.display === "block") {
+    cargar();
+  }
+}, 5000);
 
 </script>
 
