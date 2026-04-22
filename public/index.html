@@ -12,6 +12,8 @@
 <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
 
 <style>
+
+/* BASE */
 body {
   font-family: Arial;
   background: #0f172a;
@@ -26,6 +28,7 @@ body {
   margin: auto;
 }
 
+/* LOGIN */
 .login {
   max-width: 320px;
   margin: 80px auto;
@@ -41,6 +44,7 @@ body {
   font-size: 16px;
 }
 
+/* TOPBAR */
 .topbar {
   display: flex;
   gap: 10px;
@@ -64,6 +68,7 @@ body {
   color: white;
 }
 
+/* MAPA */
 #map {
   width: 100%;
   height: 40vh;
@@ -72,11 +77,7 @@ body {
   margin-bottom: 10px;
 }
 
-.stats {
-  margin-bottom: 10px;
-  font-size: 14px;
-}
-
+/* TABLA */
 .table-container {
   overflow-x: auto;
 }
@@ -103,6 +104,7 @@ body {
 img {
   width: 50px;
   border-radius: 8px;
+  cursor: pointer;
 }
 
 .delete {
@@ -113,12 +115,33 @@ img {
   border-radius: 8px;
 }
 
-/* 🔥 NUEVO: columna observaciones más legible */
-.obs {
-  max-width: 200px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+/* 🔥 MODAL IMAGEN */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 9999;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.9);
+  justify-content: center;
+  align-items: center;
+}
+
+.modal img {
+  max-width: 90%;
+  max-height: 90%;
+  border-radius: 12px;
+}
+
+.modal-close {
+  position: absolute;
+  top: 20px;
+  right: 30px;
+  font-size: 30px;
+  color: white;
+  cursor: pointer;
 }
 
 </style>
@@ -126,6 +149,7 @@ img {
 
 <body>
 
+<!-- LOGIN -->
 <div id="login" class="login">
   <h2>🔐 Admin</h2>
   <input id="user" placeholder="Usuario">
@@ -133,6 +157,7 @@ img {
   <button onclick="login()">Ingresar</button>
 </div>
 
+<!-- PANEL -->
 <div id="panel">
 
   <h2>📊 Panel ADMIN</h2>
@@ -145,10 +170,6 @@ img {
       <option>Feria 2</option>
     </select>
     <button onclick="miUbicacion()">📍 Mi ubicación</button>
-  </div>
-
-  <div class="stats">
-    Total registros: <b id="total"></b>
   </div>
 
   <div id="map"></div>
@@ -164,9 +185,16 @@ img {
 
 </div>
 
+<!-- 🔥 MODAL -->
+<div id="modal" class="modal" onclick="cerrarModal()">
+  <span class="modal-close">&times;</span>
+  <img id="imgGrande">
+</div>
+
 <script>
 
 const API = "https://api-ferias-da8q.onrender.com";
+
 const USER = "admin";
 const PASS = "1234";
 
@@ -174,6 +202,7 @@ let map;
 let cluster;
 let dataGlobal = [];
 
+/* LOGIN */
 function login() {
   if (
     document.getElementById("user").value === USER &&
@@ -188,6 +217,7 @@ function login() {
   }
 }
 
+/* MAPA */
 function iniciarMapa() {
   map = L.map("map").setView([-31.73, -60.53], 12);
 
@@ -197,12 +227,14 @@ function iniciarMapa() {
   map.addLayer(cluster);
 }
 
+/* CARGAR */
 async function cargar() {
   const res = await fetch(API + "/productores");
   dataGlobal = await res.json();
   aplicarFiltros();
 }
 
+/* FILTROS */
 function aplicarFiltros() {
   const texto = document.getElementById("buscar").value.toLowerCase();
   const feria = document.getElementById("filtroFeria").value;
@@ -217,6 +249,7 @@ function aplicarFiltros() {
   render(filtrados);
 }
 
+/* RENDER */
 function render(data) {
   const tabla = document.getElementById("tabla");
   const thead = document.getElementById("thead");
@@ -225,7 +258,6 @@ function render(data) {
   thead.innerHTML = "";
 
   cluster.clearLayers();
-  document.getElementById("total").innerText = data.length;
 
   if (data.length === 0) return;
 
@@ -236,8 +268,6 @@ function render(data) {
   });
   thead.innerHTML += "<th>ACCIONES</th>";
 
-  let bounds = [];
-
   data.forEach(p => {
 
     let fila = "<tr>";
@@ -247,20 +277,10 @@ function render(data) {
       let valor = p[col];
 
       if (col === "foto" && valor) {
-        valor = `<img src="${valor}">`;
+        valor = `<img src="${valor}" onclick="verImagen('${valor}')">`;
       }
-      else if (col === "lat" && p.lat && p.lng) {
-        valor = `<a href="https://maps.google.com/?q=${p.lat},${p.lng}" target="_blank">📍 Ver</a>`;
-      }
-      else if (col === "lng") {
-        return;
-      }
-      else if (col === "observaciones") {
-        valor = `<span class="obs" title="${valor || ''}">${valor || "-"}</span>`;
-      }
-      else if (!valor) {
-        valor = "-";
-      }
+      else if (col === "lng") return;
+      else if (!valor) valor = "-";
 
       fila += `<td>${valor}</td>`;
     });
@@ -272,21 +292,25 @@ function render(data) {
 
     if (p.lat && p.lng) {
       const marker = L.marker([p.lat, p.lng])
-        .bindPopup(`
-          <b>${p.nombre}</b><br>
-          ${p.feria}<br>
-          📝 ${p.observaciones || "Sin observaciones"}
-        `);
+        .bindPopup(`<b>${p.nombre}</b><br>${p.feria}`);
 
       cluster.addLayer(marker);
-      bounds.push([p.lat, p.lng]);
     }
 
   });
-
-  if (bounds.length) map.fitBounds(bounds);
 }
 
+/* 🔥 MODAL FUNCIONES */
+function verImagen(src) {
+  document.getElementById("modal").style.display = "flex";
+  document.getElementById("imgGrande").src = src;
+}
+
+function cerrarModal() {
+  document.getElementById("modal").style.display = "none";
+}
+
+/* BORRAR */
 async function borrar(id) {
   if (!confirm("Eliminar?")) return;
 
@@ -294,6 +318,7 @@ async function borrar(id) {
   cargar();
 }
 
+/* UBICACION */
 function miUbicacion() {
   navigator.geolocation.getCurrentPosition(pos => {
     const lat = pos.coords.latitude;
@@ -304,9 +329,11 @@ function miUbicacion() {
   });
 }
 
+/* EVENTOS */
 document.getElementById("buscar").addEventListener("input", aplicarFiltros);
 document.getElementById("filtroFeria").addEventListener("change", aplicarFiltros);
 
+/* AUTO REFRESH */
 setInterval(cargar, 10000);
 
 </script>
