@@ -3,23 +3,22 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<!-- MAPA -->
+<!-- LEAFLET -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css"/>
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css"/>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
 
 <style>
 
-/* BASE */
+/* 🌿 BASE */
 body {
-  font-family: Arial;
-  background: #0f172a;
-  color: white;
+  font-family: 'Segoe UI', sans-serif;
+  background: #f0fdf4;
   margin: 0;
   padding: 10px;
+  color: #064e3b;
 }
 
 #panel {
@@ -28,7 +27,7 @@ body {
   margin: auto;
 }
 
-/* LOGIN */
+/* 🔐 LOGIN */
 .login {
   max-width: 320px;
   margin: 80px auto;
@@ -39,12 +38,16 @@ body {
   width: 100%;
   padding: 14px;
   margin: 10px 0;
-  border-radius: 12px;
+  border-radius: 10px;
   border: none;
-  font-size: 16px;
 }
 
-/* TOPBAR */
+.login button {
+  background: #16a34a;
+  color: white;
+}
+
+/* 🔝 TOPBAR */
 .topbar {
   display: flex;
   gap: 10px;
@@ -52,32 +55,65 @@ body {
   margin-bottom: 10px;
 }
 
-.topbar input, 
-.topbar select, 
-.topbar button {
+.topbar input, .topbar select, .topbar button {
   flex: 1;
-  min-width: 120px;
-  padding: 12px;
-  border-radius: 12px;
-  border: none;
-  font-size: 14px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
 }
 
 .topbar button {
-  background: #3b82f6;
+  background: #16a34a;
   color: white;
 }
 
-/* MAPA */
+/* 🗺️ MAPA */
+.map-container {
+  position: relative;
+}
+
 #map {
   width: 100%;
   height: 40vh;
-  min-height: 250px;
-  border-radius: 15px;
-  margin-bottom: 10px;
+  border-radius: 12px;
 }
 
-/* TABLA */
+/* FULLSCREEN */
+.map-container.fullscreen {
+  position: fixed;
+  top:0; left:0;
+  width:100vw;
+  height:100vh;
+  z-index:9999;
+}
+
+.map-container.fullscreen #map {
+  height:100%;
+  border-radius:0;
+}
+
+/* BOTONES MAPA */
+.map-btn {
+  position: absolute;
+  bottom: 10px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: white;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+}
+
+.full-btn { left: 10px; }
+.loc-btn { right: 10px; }
+
+/* 📊 STATS */
+.stats {
+  margin: 10px 0;
+}
+
+/* 📋 TABLA */
 .table-container {
   overflow-x: auto;
 }
@@ -85,20 +121,18 @@ body {
 .table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
-  min-width: 600px;
+  background: white;
+  border-radius: 10px;
 }
 
 .table th, .table td {
   padding: 8px;
-  border-bottom: 1px solid #334155;
-  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .table th {
-  background: #1e293b;
-  position: sticky;
-  top: 0;
+  background: #065f46;
+  color: white;
 }
 
 img {
@@ -112,36 +146,26 @@ img {
   color: white;
   border: none;
   padding: 6px;
-  border-radius: 8px;
+  border-radius: 6px;
 }
 
-/* 🔥 MODAL IMAGEN */
+/* 🖼️ MODAL IMAGEN */
 .modal {
-  display: none;
-  position: fixed;
-  z-index: 9999;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.9);
-  justify-content: center;
-  align-items: center;
+  display:none;
+  position:fixed;
+  top:0; left:0;
+  width:100%;
+  height:100%;
+  background:rgba(0,0,0,0.8);
+  justify-content:center;
+  align-items:center;
+  z-index:10000;
 }
 
 .modal img {
-  max-width: 90%;
-  max-height: 90%;
-  border-radius: 12px;
-}
-
-.modal-close {
-  position: absolute;
-  top: 20px;
-  right: 30px;
-  font-size: 30px;
-  color: white;
-  cursor: pointer;
+  max-width:90%;
+  max-height:90%;
+  border-radius:10px;
 }
 
 </style>
@@ -160,181 +184,177 @@ img {
 <!-- PANEL -->
 <div id="panel">
 
-  <h2>📊 Panel ADMIN</h2>
+<h2>📊 Panel ADMIN</h2>
 
-  <div class="topbar">
-    <input id="buscar" placeholder="Buscar nombre o DNI">
-    <select id="filtroFeria">
-      <option value="">Todas las ferias</option>
-      <option>Feria 1</option>
-      <option>Feria 2</option>
-    </select>
-    <button onclick="miUbicacion()">📍 Mi ubicación</button>
-  </div>
+<div class="topbar">
+  <input id="buscar" placeholder="Buscar nombre o DNI">
+  <select id="filtroFeria">
+    <option value="">Todas</option>
+    <option>Feria 1</option>
+    <option>Feria 2</option>
+  </select>
+  <button onclick="miUbicacion()">📍 Mi ubicación</button>
+</div>
 
+<div class="stats">
+  Total: <b id="total"></b>
+</div>
+
+<!-- MAPA -->
+<div class="map-container" id="mapBox">
   <div id="map"></div>
 
-  <div class="table-container">
-    <table class="table">
-      <thead>
-        <tr id="thead"></tr>
-      </thead>
-      <tbody id="tabla"></tbody>
-    </table>
-  </div>
+  <button class="map-btn full-btn" onclick="fullscreen()">⛶</button>
+  <button class="map-btn loc-btn" onclick="miUbicacion()">📍</button>
+</div>
+
+<!-- TABLA -->
+<div class="table-container">
+<table class="table">
+<thead id="thead"></thead>
+<tbody id="tabla"></tbody>
+</table>
+</div>
 
 </div>
 
-<!-- 🔥 MODAL -->
-<div id="modal" class="modal" onclick="cerrarModal()">
-  <span class="modal-close">&times;</span>
-  <img id="imgGrande">
+<!-- MODAL -->
+<div class="modal" id="modal" onclick="cerrarModal()">
+  <img id="imgModal">
 </div>
 
 <script>
 
-const API = "https://api-ferias-da8q.onrender.com";
+const API="https://api-ferias-da8q.onrender.com";
+const USER="admin", PASS="1234";
 
-const USER = "admin";
-const PASS = "1234";
-
-let map;
-let cluster;
-let dataGlobal = [];
+let map, cluster, dataGlobal=[];
 
 /* LOGIN */
-function login() {
-  if (
-    document.getElementById("user").value === USER &&
-    document.getElementById("pass").value === PASS
-  ) {
-    document.getElementById("login").style.display = "none";
-    document.getElementById("panel").style.display = "block";
-    iniciarMapa();
-    cargar();
-  } else {
-    alert("Error login");
-  }
+function login(){
+if(user.value===USER && pass.value===PASS){
+loginDiv.style.display="none";
+panel.style.display="block";
+iniciarMapa();
+cargar();
+}else alert("Error");
 }
+
+const loginDiv=document.getElementById("login");
+const panel=document.getElementById("panel");
 
 /* MAPA */
-function iniciarMapa() {
-  map = L.map("map").setView([-31.73, -60.53], 12);
+function iniciarMapa(){
+map=L.map("map").setView([-31.73,-60.53],12);
 
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
-  cluster = L.markerClusterGroup();
-  map.addLayer(cluster);
+cluster=L.markerClusterGroup();
+map.addLayer(cluster);
+
+/* 📍 UBICACION AUTOMATICA */
+miUbicacion();
 }
 
-/* CARGAR */
-async function cargar() {
-  const res = await fetch(API + "/productores");
-  dataGlobal = await res.json();
-  aplicarFiltros();
-}
-
-/* FILTROS */
-function aplicarFiltros() {
-  const texto = document.getElementById("buscar").value.toLowerCase();
-  const feria = document.getElementById("filtroFeria").value;
-
-  const filtrados = dataGlobal.filter(p => {
-    return (
-      (!feria || p.feria === feria) &&
-      (p.nombre.toLowerCase().includes(texto) || p.dni.includes(texto))
-    );
-  });
-
-  render(filtrados);
-}
-
-/* RENDER */
-function render(data) {
-  const tabla = document.getElementById("tabla");
-  const thead = document.getElementById("thead");
-
-  tabla.innerHTML = "";
-  thead.innerHTML = "";
-
-  cluster.clearLayers();
-
-  if (data.length === 0) return;
-
-  const columnas = Object.keys(data[0]);
-
-  columnas.forEach(col => {
-    thead.innerHTML += `<th>${col.toUpperCase()}</th>`;
-  });
-  thead.innerHTML += "<th>ACCIONES</th>";
-
-  data.forEach(p => {
-
-    let fila = "<tr>";
-
-    columnas.forEach(col => {
-
-      let valor = p[col];
-
-      if (col === "foto" && valor) {
-        valor = `<img src="${valor}" onclick="verImagen('${valor}')">`;
-      }
-      else if (col === "lng") return;
-      else if (!valor) valor = "-";
-
-      fila += `<td>${valor}</td>`;
-    });
-
-    fila += `<td><button class="delete" onclick="borrar(${p.id})">X</button></td>`;
-    fila += "</tr>";
-
-    tabla.innerHTML += fila;
-
-    if (p.lat && p.lng) {
-      const marker = L.marker([p.lat, p.lng])
-        .bindPopup(`<b>${p.nombre}</b><br>${p.feria}`);
-
-      cluster.addLayer(marker);
-    }
-
-  });
-}
-
-/* 🔥 MODAL FUNCIONES */
-function verImagen(src) {
-  document.getElementById("modal").style.display = "flex";
-  document.getElementById("imgGrande").src = src;
-}
-
-function cerrarModal() {
-  document.getElementById("modal").style.display = "none";
-}
-
-/* BORRAR */
-async function borrar(id) {
-  if (!confirm("Eliminar?")) return;
-
-  await fetch(API + "/productores/" + id, { method: "DELETE" });
-  cargar();
+/* FULLSCREEN */
+function fullscreen(){
+const box=document.getElementById("mapBox");
+box.classList.toggle("fullscreen");
+setTimeout(()=>map.invalidateSize(),300);
 }
 
 /* UBICACION */
-function miUbicacion() {
-  navigator.geolocation.getCurrentPosition(pos => {
-    const lat = pos.coords.latitude;
-    const lng = pos.coords.longitude;
+function miUbicacion(){
+navigator.geolocation.getCurrentPosition(pos=>{
+const lat=pos.coords.latitude;
+const lng=pos.coords.longitude;
+map.setView([lat,lng],14);
+});
+}
 
-    map.setView([lat, lng], 14);
-    L.marker([lat, lng]).addTo(map).bindPopup("Tu ubicación").openPopup();
-  });
+/* CARGAR */
+async function cargar(){
+const res=await fetch(API+"/productores");
+dataGlobal=await res.json();
+aplicarFiltros();
+}
+
+/* FILTROS */
+function aplicarFiltros(){
+const texto=buscar.value.toLowerCase();
+const feria=filtroFeria.value;
+
+const filtrados=dataGlobal.filter(p=>
+(!feria||p.feria===feria)&&
+(p.nombre.toLowerCase().includes(texto)||p.dni.includes(texto))
+);
+
+render(filtrados);
+}
+
+/* RENDER */
+function render(data){
+tabla.innerHTML="";
+thead.innerHTML="";
+cluster.clearLayers();
+total.innerText=data.length;
+
+if(!data.length)return;
+
+const cols=Object.keys(data[0]);
+
+cols.forEach(c=>thead.innerHTML+=`<th>${c}</th>`);
+thead.innerHTML+="<th>ACCIONES</th>";
+
+data.forEach(p=>{
+let fila="<tr>";
+
+cols.forEach(c=>{
+let v=p[c];
+
+if(c==="foto"&&v){
+v=`<img src="${v}" onclick="verImagen('${v}')">`;
+}
+else if(c==="lat"){
+v=`<a target="_blank" href="https://maps.google.com/?q=${p.lat},${p.lng}">Ver</a>`;
+}
+else if(c==="lng") return;
+else if(!v) v="-";
+
+fila+=`<td>${v}</td>`;
+});
+
+fila+=`<td><button class="delete" onclick="borrar(${p.id})">X</button></td></tr>`;
+tabla.innerHTML+=fila;
+
+if(p.lat&&p.lng){
+cluster.addLayer(L.marker([p.lat,p.lng]));
+}
+});
+}
+
+/* IMAGEN */
+function verImagen(src){
+modal.style.display="flex";
+imgModal.src=src;
+}
+function cerrarModal(){
+modal.style.display="none";
+}
+
+/* BORRAR */
+async function borrar(id){
+if(!confirm("Eliminar?")) return;
+await fetch(API+"/productores/"+id,{method:"DELETE"});
+cargar();
 }
 
 /* EVENTOS */
-document.getElementById("buscar").addEventListener("input", aplicarFiltros);
-document.getElementById("filtroFeria").addEventListener("change", aplicarFiltros);
+buscar.oninput=aplicarFiltros;
+filtroFeria.onchange=aplicarFiltros;
 
 /* AUTO REFRESH */
-setInterval(cargar, 10000);
+setInterval(cargar,10000);
 
 </script>
 
