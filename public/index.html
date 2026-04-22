@@ -7,12 +7,11 @@ let TOKEN = localStorage.getItem("token");
 let map, cluster, dataGlobal=[];
 let markersMap = {};
 
-// referencias DOM
+// DOM
 let buscar, filtroFeria, tabla, thead, total, modal, imgGrande;
 
-/* =========================
-   INIT SEGURO (CLAVE)
-========================= */
+
+/* INIT */
 document.addEventListener("DOMContentLoaded", () => {
 
   buscar = document.getElementById("buscar");
@@ -26,7 +25,6 @@ document.addEventListener("DOMContentLoaded", () => {
   if (buscar) buscar.addEventListener("input", aplicarFiltros);
   if (filtroFeria) filtroFeria.addEventListener("change", aplicarFiltros);
 
-  // auto login
   if (TOKEN) {
     document.getElementById("login").style.display="none";
     document.getElementById("panel").style.display="block";
@@ -34,13 +32,10 @@ document.addEventListener("DOMContentLoaded", () => {
     iniciarMapa();
     cargar();
   }
-
 });
 
 
-/* =========================
-   LOGIN REAL
-========================= */
+/* LOGIN */
 async function hacerLogin(){
 
   const userInput = document.getElementById("user").value;
@@ -49,16 +44,13 @@ async function hacerLogin(){
   const res = await fetch(API + "/login", {
     method: "POST",
     headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({
-      user: userInput,
-      pass: passInput
-    })
+    body: JSON.stringify({ user: userInput, pass: passInput })
   });
 
   if(res.ok){
     const data = await res.json();
 
-    TOKEN = data.token; // 🔥 IMPORTANTE
+    TOKEN = data.token;
     localStorage.setItem("token", TOKEN);
 
     document.getElementById("login").style.display="none";
@@ -73,12 +65,13 @@ async function hacerLogin(){
 }
 
 
-/* =========================
-   MAPA
-========================= */
+/* MAPA */
 function iniciarMapa(){
 
-  if(map) return; // evita duplicación
+  if(map) return;
+
+  const mapDiv = document.getElementById("map");
+  if(!mapDiv) return;
 
   map = L.map("map").setView([-31.73,-60.53],12);
 
@@ -91,22 +84,16 @@ function iniciarMapa(){
 }
 
 
-/* =========================
-   FULLSCREEN
-========================= */
+/* FULL */
 function fullscreen(){
   const cont = document.getElementById("mapContainer");
   cont.classList.toggle("full");
 
-  setTimeout(() => {
-    map.invalidateSize();
-  }, 300);
+  setTimeout(() => map.invalidateSize(), 300);
 }
 
 
-/* =========================
-   UBICACION
-========================= */
+/* UBICACION */
 function miUbicacion(){
   navigator.geolocation.getCurrentPosition(p=>{
     map.setView([p.coords.latitude,p.coords.longitude],14);
@@ -114,31 +101,32 @@ function miUbicacion(){
 }
 
 
-/* =========================
-   CARGAR DATOS
-========================= */
+/* CARGAR */
 async function cargar(){
 
-  const res = await fetch(API + "/productores", {
-    headers: {
-      "Authorization": "Bearer " + TOKEN
+  try {
+
+    const res = await fetch(API + "/productores", {
+      headers: { "Authorization": "Bearer " + TOKEN }
+    });
+
+    if(res.status === 401){
+      localStorage.removeItem("token");
+      location.reload();
+      return;
     }
-  });
 
-  if(res.status === 401){
-    localStorage.removeItem("token");
-    location.reload();
-    return;
+    dataGlobal = await res.json();
+    aplicarFiltros();
+
+  } catch(e){
+    console.error(e);
+    alert("Error cargando datos");
   }
-
-  dataGlobal = await res.json();
-  aplicarFiltros();
 }
 
 
-/* =========================
-   FILTROS
-========================= */
+/* FILTROS */
 function aplicarFiltros(){
 
   if(!buscar || !filtroFeria) return;
@@ -158,10 +146,10 @@ function aplicarFiltros(){
 }
 
 
-/* =========================
-   RENDER
-========================= */
+/* RENDER */
 function render(data){
+
+  if(!tabla || !thead || !total) return;
 
   tabla.innerHTML="";
   thead.innerHTML="";
@@ -206,43 +194,31 @@ function render(data){
 }
 
 
-/* =========================
-   IR A MAPA
-========================= */
+/* IR A MAPA */
 function irA(id){
-
   const marker = markersMap[id];
   if(!marker) return;
 
-  const latlng = marker.getLatLng();
-
-  map.setView(latlng, 17);
-
+  map.setView(marker.getLatLng(), 17);
   setTimeout(()=>marker.openPopup(),300);
 }
 
 
-/* =========================
-   IMG
-========================= */
+/* IMG */
 function verImg(src){
   modal.style.display="flex";
   imgGrande.src=src;
 }
 
 
-/* =========================
-   DELETE
-========================= */
+/* DELETE */
 async function borrar(id){
 
   if(!confirm("Eliminar?")) return;
 
   await fetch(API + "/productores/" + id, {
     method: "DELETE",
-    headers: {
-      "Authorization": "Bearer " + TOKEN
-    }
+    headers: { "Authorization": "Bearer " + TOKEN }
   });
 
   cargar();
