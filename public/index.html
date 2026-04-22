@@ -3,42 +3,40 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<!-- LEAFLET -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css"/>
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css"/>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
 
 <style>
 
-/* BASE (MISMO ESTILO FORM) */
+/* BASE */
 body {
   font-family: 'Segoe UI', sans-serif;
   background: #f0fdf4;
   margin: 0;
-  padding: 10px;
   color: #064e3b;
 }
 
-#panel {
-  display: none;
+/* CONTENEDOR */
+.container {
   max-width: 1200px;
   margin: auto;
+  padding: 15px;
 }
 
 /* LOGIN */
 .login {
   max-width: 320px;
-  margin: 80px auto;
+  margin: 100px auto;
   text-align: center;
 }
 
 .login input, .login button {
   width: 100%;
   padding: 14px;
-  margin: 10px 0;
+  margin: 8px 0;
   border-radius: 10px;
   border: 1px solid #d1d5db;
 }
@@ -46,20 +44,51 @@ body {
 .login button {
   background: #16a34a;
   color: white;
+  font-weight: bold;
 }
 
-/* TOPBAR */
+/* HEADER */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+/* STATS */
+.cards {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.card {
+  flex: 1;
+  background: white;
+  padding: 15px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.card h3 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.card b {
+  font-size: 22px;
+}
+
+/* FILTROS */
 .topbar {
   display: flex;
   gap: 10px;
-  flex-wrap: wrap;
   margin-bottom: 10px;
+  flex-wrap: wrap;
 }
 
-.topbar input,
-.topbar select,
-.topbar button {
-  flex: 1;
+.topbar input, .topbar select, .topbar button {
   padding: 12px;
   border-radius: 10px;
   border: 1px solid #d1d5db;
@@ -73,32 +102,20 @@ body {
 /* MAPA */
 .map-container {
   position: relative;
+  margin-bottom: 10px;
 }
 
 #map {
-  width: 100%;
-  height: 40vh;
-  min-height: 250px;
-  border-radius: 15px;
-}
-
-/* FULLSCREEN */
-.map-fullscreen {
-  position: fixed !important;
-  top: 0;
-  left: 0;
-  width: 100vw !important;
-  height: 100vh !important;
-  z-index: 9999;
-  border-radius: 0;
+  height: 350px;
+  border-radius: 12px;
 }
 
 /* BOTONES MAPA */
 .map-btn {
   position: absolute;
   bottom: 10px;
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
   border: none;
   background: white;
@@ -109,28 +126,44 @@ body {
 .btn-gps { right: 10px; }
 .btn-full { left: 10px; }
 
+/* FULLSCREEN */
+.full {
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9999;
+}
+
 /* TABLA */
 .table-container {
-  overflow-x: auto;
+  background: white;
+  border-radius: 12px;
+  overflow: auto;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
-.table {
+table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
-  background: white;
-  border-radius: 10px;
-  overflow: hidden;
 }
 
-.table th, .table td {
-  padding: 8px;
-  border-bottom: 1px solid #d1d5db;
-}
-
-.table th {
+th {
   background: #065f46;
   color: white;
+  padding: 10px;
+  position: sticky;
+  top: 0;
+}
+
+td {
+  padding: 8px;
+  border-bottom: 1px solid #eee;
+}
+
+tr:hover {
+  background: #ecfdf5;
 }
 
 img {
@@ -139,7 +172,7 @@ img {
   cursor: pointer;
 }
 
-/* BOTON ELIMINAR */
+/* BOTONES */
 .delete {
   background: #ef4444;
   color: white;
@@ -148,23 +181,19 @@ img {
   border-radius: 6px;
 }
 
-/* MODAL IMAGEN */
+/* MODAL */
 .modal {
   display: none;
   position: fixed;
-  z-index: 10000;
-  left: 0;
-  top: 0;
+  background: rgba(0,0,0,0.8);
   width: 100%;
   height: 100%;
-  background: rgba(0,0,0,0.8);
   justify-content: center;
   align-items: center;
 }
 
 .modal img {
   max-width: 90%;
-  max-height: 90%;
   border-radius: 10px;
 }
 
@@ -175,38 +204,48 @@ img {
 
 <!-- LOGIN -->
 <div id="login" class="login">
-  <h2>🔐 Admin</h2>
+  <h2>🔐 Panel Admin</h2>
   <input id="user" placeholder="Usuario">
   <input id="pass" type="password" placeholder="Contraseña">
-  <button onclick="login()">Ingresar</button>
+  <button onclick="hacerLogin()">Ingresar</button>
 </div>
 
 <!-- PANEL -->
-<div id="panel">
+<div id="panel" class="container" style="display:none;">
 
-<h2>📊 Panel ADMIN</h2>
+<div class="header">
+  <h2>📊 Dashboard</h2>
+</div>
 
+<!-- STATS -->
+<div class="cards">
+  <div class="card">
+    <h3>Total registros</h3>
+    <b id="total"></b>
+  </div>
+</div>
+
+<!-- FILTROS -->
 <div class="topbar">
-  <input id="buscar" placeholder="Buscar nombre o DNI">
+  <input id="buscar" placeholder="Buscar">
   <select id="filtroFeria">
-    <option value="">Todas las ferias</option>
+    <option value="">Todas</option>
     <option>Feria 1</option>
     <option>Feria 2</option>
   </select>
-  <button onclick="miUbicacion()">📍 Mi ubicación</button>
+  <button onclick="miUbicacion()">📍</button>
 </div>
 
-<div>Total registros: <b id="total"></b></div>
-
+<!-- MAPA -->
 <div class="map-container">
   <div id="map"></div>
-
   <button class="map-btn btn-gps" onclick="miUbicacion()">📍</button>
   <button class="map-btn btn-full" onclick="fullscreen()">⛶</button>
 </div>
 
+<!-- TABLA -->
 <div class="table-container">
-<table class="table">
+<table>
 <thead><tr id="thead"></tr></thead>
 <tbody id="tabla"></tbody>
 </table>
@@ -215,7 +254,7 @@ img {
 </div>
 
 <!-- MODAL -->
-<div id="modal" class="modal" onclick="cerrarImagen()">
+<div id="modal" class="modal" onclick="this.style.display='none'">
   <img id="imgGrande">
 </div>
 
@@ -225,143 +264,98 @@ const API = "https://api-ferias-da8q.onrender.com";
 const USER = "admin";
 const PASS = "1234";
 
-let map, cluster, dataGlobal = [];
+let map, cluster, dataGlobal=[];
 
 /* LOGIN */
-function login() {
-
-  const userInput = document.getElementById("user").value;
-  const passInput = document.getElementById("pass").value;
-
-  if (userInput === USER && passInput === PASS) {
-
-    document.getElementById("login").style.display = "none";
-    document.getElementById("panel").style.display = "block";
-
+function hacerLogin(){
+  if(user.value===USER && pass.value===PASS){
+    login.style.display="none";
+    panel.style.display="block";
     iniciarMapa();
     cargar();
-
-  } else {
-    alert("Error de usuario o contraseña");
-  }
+  } else alert("Error");
 }
 
 /* MAPA */
-function iniciarMapa() {
-  map = L.map("map").setView([-31.73, -60.53], 12);
+function iniciarMapa(){
+  map=L.map("map").setView([-31.73,-60.53],12);
 
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
-  cluster = L.markerClusterGroup();
+  cluster=L.markerClusterGroup();
   map.addLayer(cluster);
 
-  // 📍 ubicación automática
   miUbicacion();
-
-  setTimeout(() => map.invalidateSize(), 300);
 }
 
-/* FULLSCREEN */
-function fullscreen() {
-  const mapDiv = document.getElementById("map");
-  mapDiv.classList.toggle("map-fullscreen");
-
-  setTimeout(() => map.invalidateSize(), 300);
+/* FULL */
+function fullscreen(){
+  document.getElementById("map").classList.toggle("full");
+  setTimeout(()=>map.invalidateSize(),300);
 }
 
 /* UBICACION */
-function miUbicacion() {
-  navigator.geolocation.getCurrentPosition(pos => {
-    const lat = pos.coords.latitude;
-    const lng = pos.coords.longitude;
-
-    map.setView([lat, lng], 14);
+function miUbicacion(){
+  navigator.geolocation.getCurrentPosition(p=>{
+    map.setView([p.coords.latitude,p.coords.longitude],14);
   });
 }
 
-/* CARGAR */
-async function cargar() {
-  const res = await fetch(API + "/productores");
-  dataGlobal = await res.json();
-  aplicarFiltros();
-}
-
-/* FILTROS */
-function aplicarFiltros() {
-  const texto = buscar.value.toLowerCase();
-  const feria = filtroFeria.value;
-
-  const filtrados = dataGlobal.filter(p =>
-    (!feria || p.feria === feria) &&
-    (p.nombre.toLowerCase().includes(texto) || p.dni.includes(texto))
-  );
-
-  render(filtrados);
+/* DATA */
+async function cargar(){
+  const res=await fetch(API+"/productores");
+  dataGlobal=await res.json();
+  render(dataGlobal);
 }
 
 /* RENDER */
-function render(data) {
-  tabla.innerHTML = "";
-  thead.innerHTML = "";
-  cluster.clearLayers();
-  total.innerText = data.length;
+function render(data){
+  tabla.innerHTML="";
+  thead.innerHTML="";
+  total.innerText=data.length;
 
-  if (!data.length) return;
+  if(!data.length)return;
 
-  const cols = Object.keys(data[0]);
+  const cols=Object.keys(data[0]);
 
-  cols.forEach(c => thead.innerHTML += `<th>${c}</th>`);
-  thead.innerHTML += "<th></th>";
+  cols.forEach(c=>thead.innerHTML+=`<th>${c}</th>`);
+  thead.innerHTML+="<th></th>";
 
-  data.forEach(p => {
-    let row = "<tr>";
+  data.forEach(p=>{
+    let row="<tr>";
 
-    cols.forEach(c => {
-      let val = p[c];
+    cols.forEach(c=>{
+      let val=p[c];
 
-      if (c === "foto" && val) {
-        val = `<img src="${val}" onclick="verImagen('${val}')">`;
-      } else if (c === "lat") {
-        val = `<a href="https://maps.google.com/?q=${p.lat},${p.lng}" target="_blank">Ver</a>`;
-      } else if (c === "lng") return;
-      else if (!val) val = "-";
+      if(c==="foto" && val){
+        val=`<img src="${val}" onclick="verImg('${val}')">`;
+      } else if(c==="lng") return;
+      else if(!val) val="-";
 
-      row += `<td>${val}</td>`;
+      row+=`<td>${val}</td>`;
     });
 
-    row += `<td><button class="delete" onclick="borrar(${p.id})">X</button></td></tr>`;
-    tabla.innerHTML += row;
+    row+=`<td><button class="delete" onclick="borrar(${p.id})">X</button></td></tr>`;
+    tabla.innerHTML+=row;
 
-    if (p.lat && p.lng) {
-      cluster.addLayer(
-        L.marker([p.lat, p.lng]).bindPopup(`<b>${p.nombre}</b>`)
-      );
+    if(p.lat && p.lng){
+      cluster.addLayer(L.marker([p.lat,p.lng]));
     }
   });
 }
 
-/* IMAGEN */
-function verImagen(src) {
-  modal.style.display = "flex";
-  imgGrande.src = src;
+/* IMG */
+function verImg(src){
+  modal.style.display="flex";
+  imgGrande.src=src;
 }
 
-function cerrarImagen() {
-  modal.style.display = "none";
-}
-
-/* BORRAR */
-async function borrar(id) {
-  if (!confirm("Eliminar?")) return;
-  await fetch(API + "/productores/" + id, { method: "DELETE" });
+/* DELETE */
+async function borrar(id){
+  if(!confirm("Eliminar?"))return;
+  await fetch(API+"/productores/"+id,{method:"DELETE"});
   cargar();
 }
-
-/* EVENTOS */
-buscar.addEventListener("input", aplicarFiltros);
-filtroFeria.addEventListener("change", aplicarFiltros);
-
-setInterval(cargar, 10000);
 
 </script>
 
