@@ -106,7 +106,7 @@ async function cargar(){
 
 /* FILTROS */
 function aplicarFiltros(){
-  const texto = buscar.value.toLowerCase();
+  const texto = document.getElementById("buscar").value.toLowerCase();
   const feria = filtroFeria.value;
 
   const filtrados = dataGlobal.filter(p =>
@@ -198,7 +198,6 @@ async function borrar(id){
 
 
 /* EVENTOS */
-buscar.addEventListener("input", aplicarFiltros);
-filtroFeria.addEventListener("change", aplicarFiltros);
-
+document.getElementById("buscar").addEventListener("input", aplicarFiltros);
+document.getElementById("filtroFeria").addEventListener("change", aplicarFiltros);
 </script>
