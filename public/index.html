@@ -7,7 +7,40 @@ let TOKEN = localStorage.getItem("token");
 let map, cluster, dataGlobal=[];
 let markersMap = {};
 
-/* LOGIN REAL */
+// referencias DOM
+let buscar, filtroFeria, tabla, thead, total, modal, imgGrande;
+
+/* =========================
+   INIT SEGURO (CLAVE)
+========================= */
+document.addEventListener("DOMContentLoaded", () => {
+
+  buscar = document.getElementById("buscar");
+  filtroFeria = document.getElementById("filtroFeria");
+  tabla = document.getElementById("tabla");
+  thead = document.getElementById("thead");
+  total = document.getElementById("total");
+  modal = document.getElementById("modal");
+  imgGrande = document.getElementById("imgGrande");
+
+  if (buscar) buscar.addEventListener("input", aplicarFiltros);
+  if (filtroFeria) filtroFeria.addEventListener("change", aplicarFiltros);
+
+  // auto login
+  if (TOKEN) {
+    document.getElementById("login").style.display="none";
+    document.getElementById("panel").style.display="block";
+
+    iniciarMapa();
+    cargar();
+  }
+
+});
+
+
+/* =========================
+   LOGIN REAL
+========================= */
 async function hacerLogin(){
 
   const userInput = document.getElementById("user").value;
@@ -25,7 +58,8 @@ async function hacerLogin(){
   if(res.ok){
     const data = await res.json();
 
-    localStorage.setItem("token", data.token);
+    TOKEN = data.token; // 🔥 IMPORTANTE
+    localStorage.setItem("token", TOKEN);
 
     document.getElementById("login").style.display="none";
     document.getElementById("panel").style.display="block";
@@ -38,34 +72,28 @@ async function hacerLogin(){
   }
 }
 
-/* AUTO LOGIN */
-window.onload = () => {
-  const token = localStorage.getItem("token");
 
-  if(token){
-    document.getElementById("login").style.display="none";
-    document.getElementById("panel").style.display="block";
-
-    iniciarMapa();
-    cargar();
-  }
-};
-
-
-/* MAPA */
+/* =========================
+   MAPA
+========================= */
 function iniciarMapa(){
-  map=L.map("map").setView([-31.73,-60.53],12);
+
+  if(map) return; // evita duplicación
+
+  map = L.map("map").setView([-31.73,-60.53],12);
 
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
-  cluster=L.markerClusterGroup();
+  cluster = L.markerClusterGroup();
   map.addLayer(cluster);
 
   miUbicacion();
 }
 
 
-/* FULLSCREEN */
+/* =========================
+   FULLSCREEN
+========================= */
 function fullscreen(){
   const cont = document.getElementById("mapContainer");
   cont.classList.toggle("full");
@@ -76,7 +104,9 @@ function fullscreen(){
 }
 
 
-/* UBICACION */
+/* =========================
+   UBICACION
+========================= */
 function miUbicacion(){
   navigator.geolocation.getCurrentPosition(p=>{
     map.setView([p.coords.latitude,p.coords.longitude],14);
@@ -84,12 +114,14 @@ function miUbicacion(){
 }
 
 
-/* CARGAR DATOS (CON TOKEN) */
+/* =========================
+   CARGAR DATOS
+========================= */
 async function cargar(){
 
   const res = await fetch(API + "/productores", {
     headers: {
-      "Authorization": TOKEN
+      "Authorization": "Bearer " + TOKEN
     }
   });
 
@@ -104,27 +136,38 @@ async function cargar(){
 }
 
 
-/* FILTROS */
+/* =========================
+   FILTROS
+========================= */
 function aplicarFiltros(){
-  const texto = document.getElementById("buscar").value.toLowerCase();
+
+  if(!buscar || !filtroFeria) return;
+
+  const texto = buscar.value.toLowerCase();
   const feria = filtroFeria.value;
 
   const filtrados = dataGlobal.filter(p =>
     (!feria || p.feria===feria) &&
-    (p.nombre.toLowerCase().includes(texto) || p.dni.includes(texto))
+    (
+      (p.nombre && p.nombre.toLowerCase().includes(texto)) ||
+      (p.dni && p.dni.toString().includes(texto))
+    )
   );
 
   render(filtrados);
 }
 
 
-/* RENDER */
+/* =========================
+   RENDER
+========================= */
 function render(data){
+
   tabla.innerHTML="";
   thead.innerHTML="";
   total.innerText=data.length;
 
-  if(!data.length)return;
+  if(!data.length) return;
 
   const cols = Object.keys(data[0]).filter(c => c !== "lng");
 
@@ -135,6 +178,7 @@ function render(data){
   markersMap = {};
 
   data.forEach(p=>{
+
     let row=`<tr onclick="irA(${p.id})">`;
 
     cols.forEach(c=>{
@@ -162,42 +206,46 @@ function render(data){
 }
 
 
-/* IR A MAPA */
+/* =========================
+   IR A MAPA
+========================= */
 function irA(id){
+
   const marker = markersMap[id];
   if(!marker) return;
 
   const latlng = marker.getLatLng();
 
   map.setView(latlng, 17);
+
   setTimeout(()=>marker.openPopup(),300);
 }
 
 
-/* IMG */
+/* =========================
+   IMG
+========================= */
 function verImg(src){
   modal.style.display="flex";
   imgGrande.src=src;
 }
 
 
-/* DELETE (CON TOKEN) */
+/* =========================
+   DELETE
+========================= */
 async function borrar(id){
 
-  if(!confirm("Eliminar?"))return;
+  if(!confirm("Eliminar?")) return;
 
   await fetch(API + "/productores/" + id, {
     method: "DELETE",
     headers: {
-      "Authorization": TOKEN
+      "Authorization": "Bearer " + TOKEN
     }
   });
 
   cargar();
 }
 
-
-/* EVENTOS */
-document.getElementById("buscar").addEventListener("input", aplicarFiltros);
-document.getElementById("filtroFeria").addEventListener("change", aplicarFiltros);
 </script>
