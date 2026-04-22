@@ -229,12 +229,21 @@ let map, cluster, dataGlobal = [];
 
 /* LOGIN */
 function login() {
-  if (user.value === USER && pass.value === PASS) {
-    login.style.display = "none";
-    panel.style.display = "block";
+
+  const userInput = document.getElementById("user").value;
+  const passInput = document.getElementById("pass").value;
+
+  if (userInput === USER && passInput === PASS) {
+
+    document.getElementById("login").style.display = "none";
+    document.getElementById("panel").style.display = "block";
+
     iniciarMapa();
     cargar();
-  } else alert("Error");
+
+  } else {
+    alert("Error de usuario o contraseña");
+  }
 }
 
 /* MAPA */
