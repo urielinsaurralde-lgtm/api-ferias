@@ -121,6 +121,7 @@ body {
   background: white;
   box-shadow: 0 3px 10px rgba(0,0,0,0.3);
   cursor: pointer;
+  z-index: 1000; /* 🔥 CLAVE */
 }
 
 .btn-gps { right: 10px; }
@@ -316,7 +317,7 @@ function render(data){
 
   if(!data.length)return;
 
-  const cols=Object.keys(data[0]);
+  const cols = Object.keys(data[0]).filter(c => c !== "lng");
 
   cols.forEach(c=>thead.innerHTML+=`<th>${c}</th>`);
   thead.innerHTML+="<th></th>";
