@@ -10,10 +10,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// 📁 SERVIR PANEL (IMPORTANTE)
+// 📁 SERVIR PANEL
 app.use(express.static(path.join(__dirname, "public")));
 
-// 📸 MULTER (temporal)
+// 📸 MULTER
 const upload = multer({ dest: "uploads/" });
 
 // ☁️ CLOUDINARY
@@ -46,7 +46,7 @@ app.post("/guardar", upload.single("foto"), async (req, res) => {
 
     let fotoUrl = null;
 
-    // 📸 subir imagen optimizada
+    // 📸 subir imagen
     if (req.file) {
       const result = await cloudinary.uploader.upload(req.file.path, {
         transformation: [
@@ -62,10 +62,11 @@ app.post("/guardar", upload.single("foto"), async (req, res) => {
       fs.unlinkSync(req.file.path);
     }
 
+    // 🔥 QUERY ACTUALIZADA CON OBSERVACIONES
     const sql = `
       INSERT INTO productores 
-      (nombre, dni, email, renspa, actividad, feria, lat, lng, foto, fecha)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (nombre, dni, email, renspa, actividad, feria, observaciones, lat, lng, foto, fecha)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     db.query(sql, [
@@ -75,6 +76,7 @@ app.post("/guardar", upload.single("foto"), async (req, res) => {
       data.renspa,
       data.actividad,
       data.feria,
+      data.observaciones, // 🔥 NUEVO CAMPO
       data.lat,
       data.lng,
       fotoUrl,
@@ -124,7 +126,7 @@ app.get("/test", (req, res) => {
   res.send("API funcionando 🚀");
 });
 
-// 👉 PUERTO (RENDER)
+// 👉 PUERTO
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("Servidor corriendo en puerto " + PORT);
