@@ -1,6 +1,3 @@
-const jwt = require("jsonwebtoken");
-const SECRET = "clave_super_secreta";
-
 const express = require("express");
 const mysql = require("mysql2");
 const cors = require("cors");
@@ -8,62 +5,95 @@ const multer = require("multer");
 const cloudinary = require("cloudinary").v2;
 const fs = require("fs");
 const path = require("path");
+const jwt = require("jsonwebtoken");
 
 const app = express();
+
+// 🔐 CONFIG
+const SECRET = process.env.JWT_SECRET || "clave_super_secreta";
+
+// MIDDLEWARES
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
+// 📁 SERVIR FRONT
 app.use(express.static(path.join(__dirname, "public")));
 
+// 📸 MULTER
 const upload = multer({ dest: "uploads/" });
 
-// CLOUDINARY
+// ☁️ CLOUDINARY (⚠️ ideal mover a ENV)
 cloudinary.config({
-  cloud_name: "dlmrfhwcn",
-  api_key: "824186718736416",
-  api_secret: "JR7-Bqp_Ekm0-H70kZR83iH3jJ8"
+  cloud_name: process.env.CLOUD_NAME || "dlmrfhwcn",
+  api_key: process.env.CLOUD_KEY || "824186718736416",
+  api_secret: process.env.CLOUD_SECRET || "JR7-Bqp_Ekm0-H70kZR83iH3jJ8"
 });
 
-// MYSQL
+// 🗄️ MYSQL
 const db = mysql.createPool({
   host: process.env.DB_HOST || "monorail.proxy.rlwy.net",
   user: process.env.DB_USER || "root",
   password: process.env.DB_PASSWORD || "IxlfPUfDAujbIQjAtRTgMsrpEaZMVrjb",
   database: process.env.DB_NAME || "railway",
-  port: process.env.DB_PORT || 17892
+  port: process.env.DB_PORT || 17892,
+  waitForConnections: true,
+  connectionLimit: 10
 });
 
 
-// 🔐 LOGIN REAL
+// =========================
+// 🔐 LOGIN
+// =========================
 app.post("/login", (req, res) => {
   const { user, pass } = req.body;
+
+  if (!user || !pass) {
+    return res.status(400).json({ error: "Faltan datos" });
+  }
 
   if (user === "admin" && pass === "1234") {
     const token = jwt.sign({ user }, SECRET, { expiresIn: "8h" });
     return res.json({ token });
   }
 
-  res.status(401).send("Credenciales incorrectas");
+  return res.status(401).json({ error: "Credenciales incorrectas" });
 });
 
 
-// 🔐 MIDDLEWARE PROTEGIDO
+// =========================
+// 🔐 MIDDLEWARE TOKEN
+// =========================
 function verificarToken(req, res, next) {
-  const token = req.headers["authorization"];
 
-  if (!token) return res.status(403).send("Token requerido");
+  const authHeader = req.headers["authorization"];
+
+  if (!authHeader) {
+    return res.status(403).json({ error: "Token requerido" });
+  }
+
+  // 👉 Soporta "Bearer TOKEN" o solo TOKEN
+  const token = authHeader.startsWith("Bearer ")
+    ? authHeader.split(" ")[1]
+    : authHeader;
 
   jwt.verify(token, SECRET, (err, decoded) => {
-    if (err) return res.status(401).send("Token inválido");
+    if (err) {
+      return res.status(401).json({ error: "Token inválido" });
+    }
+
     req.user = decoded;
     next();
   });
 }
 
 
-// 👉 GUARDAR
+// =========================
+// 📥 GUARDAR DATOS
+// =========================
 app.post("/guardar", upload.single("foto"), async (req, res) => {
   try {
+
     const data = req.body;
 
     const fecha = new Date().toLocaleString("es-AR", {
@@ -81,6 +111,8 @@ app.post("/guardar", upload.single("foto"), async (req, res) => {
       });
 
       fotoUrl = result.secure_url;
+
+      // eliminar temporal
       fs.unlinkSync(req.file.path);
     }
 
@@ -97,37 +129,75 @@ app.post("/guardar", upload.single("foto"), async (req, res) => {
       data.renspa,
       data.actividad,
       data.feria,
-      data.observaciones,
+      data.observaciones || null,
       data.lat,
       data.lng,
       fotoUrl,
       fecha
-    ], err => {
-      if (err) return res.status(500).send(err);
-      res.send("OK");
+    ], (err) => {
+
+      if (err) {
+        console.log("ERROR DB:", err);
+        return res.status(500).json({ error: "Error en base de datos" });
+      }
+
+      res.json({ ok: true });
     });
 
-  } catch (e) {
-    res.status(500).send("Error");
+  } catch (error) {
+    console.log("ERROR SERVER:", error);
+    res.status(500).json({ error: "Error interno" });
   }
 });
 
 
-// 🔐 PROTEGIDOS
+// =========================
+// 📊 GET DATOS (PROTEGIDO)
+// =========================
 app.get("/productores", verificarToken, (req, res) => {
+
   db.query("SELECT * FROM productores ORDER BY id DESC", (err, results) => {
-    if (err) return res.status(500).send(err);
+
+    if (err) {
+      console.log("ERROR MYSQL:", err);
+      return res.status(500).json({ error: "Error DB" });
+    }
+
     res.json(results);
   });
 });
 
+
+// =========================
+// ❌ DELETE (PROTEGIDO)
+// =========================
 app.delete("/productores/:id", verificarToken, (req, res) => {
-  db.query("DELETE FROM productores WHERE id=?", [req.params.id], err => {
-    if (err) return res.status(500).send(err);
-    res.send("OK");
+
+  db.query("DELETE FROM productores WHERE id=?", [req.params.id], (err) => {
+
+    if (err) {
+      console.log("ERROR DELETE:", err);
+      return res.status(500).json({ error: "Error al eliminar" });
+    }
+
+    res.json({ ok: true });
   });
 });
 
-app.listen(process.env.PORT || 3000, () => {
-  console.log("Servidor listo 🚀");
+
+// =========================
+// 🧪 TEST
+// =========================
+app.get("/test", (req, res) => {
+  res.send("API funcionando 🚀");
+});
+
+
+// =========================
+// 🚀 START
+// =========================
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log("Servidor corriendo en puerto " + PORT);
 });
