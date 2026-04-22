@@ -12,8 +12,6 @@
 <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
 
 <style>
-
-/* BASE */
 body {
   font-family: Arial;
   background: #0f172a;
@@ -28,7 +26,6 @@ body {
   margin: auto;
 }
 
-/* LOGIN */
 .login {
   max-width: 320px;
   margin: 80px auto;
@@ -44,7 +41,6 @@ body {
   font-size: 16px;
 }
 
-/* TOPBAR */
 .topbar {
   display: flex;
   gap: 10px;
@@ -68,7 +64,6 @@ body {
   color: white;
 }
 
-/* MAPA */
 #map {
   width: 100%;
   height: 40vh;
@@ -77,13 +72,11 @@ body {
   margin-bottom: 10px;
 }
 
-/* STATS */
 .stats {
   margin-bottom: 10px;
   font-size: 14px;
 }
 
-/* TABLA */
 .table-container {
   overflow-x: auto;
 }
@@ -120,30 +113,12 @@ img {
   border-radius: 8px;
 }
 
-/* MOBILE */
-@media (max-width: 600px) {
-
-  h2 {
-    font-size: 18px;
-  }
-
-  .topbar {
-    flex-direction: column;
-  }
-
-  .topbar input,
-  .topbar select,
-  .topbar button {
-    width: 100%;
-  }
-
-  .table {
-    font-size: 12px;
-  }
-
-  img {
-    width: 40px;
-  }
+/* 🔥 NUEVO: columna observaciones más legible */
+.obs {
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 </style>
@@ -151,7 +126,6 @@ img {
 
 <body>
 
-<!-- LOGIN -->
 <div id="login" class="login">
   <h2>🔐 Admin</h2>
   <input id="user" placeholder="Usuario">
@@ -159,7 +133,6 @@ img {
   <button onclick="login()">Ingresar</button>
 </div>
 
-<!-- PANEL -->
 <div id="panel">
 
   <h2>📊 Panel ADMIN</h2>
@@ -180,7 +153,6 @@ img {
 
   <div id="map"></div>
 
-  <!-- TABLA RESPONSIVE -->
   <div class="table-container">
     <table class="table">
       <thead>
@@ -195,7 +167,6 @@ img {
 <script>
 
 const API = "https://api-ferias-da8q.onrender.com";
-
 const USER = "admin";
 const PASS = "1234";
 
@@ -203,7 +174,6 @@ let map;
 let cluster;
 let dataGlobal = [];
 
-/* LOGIN */
 function login() {
   if (
     document.getElementById("user").value === USER &&
@@ -218,7 +188,6 @@ function login() {
   }
 }
 
-/* MAPA */
 function iniciarMapa() {
   map = L.map("map").setView([-31.73, -60.53], 12);
 
@@ -228,14 +197,12 @@ function iniciarMapa() {
   map.addLayer(cluster);
 }
 
-/* CARGAR */
 async function cargar() {
   const res = await fetch(API + "/productores");
   dataGlobal = await res.json();
   aplicarFiltros();
 }
 
-/* FILTROS */
 function aplicarFiltros() {
   const texto = document.getElementById("buscar").value.toLowerCase();
   const feria = document.getElementById("filtroFeria").value;
@@ -250,7 +217,6 @@ function aplicarFiltros() {
   render(filtrados);
 }
 
-/* RENDER */
 function render(data) {
   const tabla = document.getElementById("tabla");
   const thead = document.getElementById("thead");
@@ -289,6 +255,9 @@ function render(data) {
       else if (col === "lng") {
         return;
       }
+      else if (col === "observaciones") {
+        valor = `<span class="obs" title="${valor || ''}">${valor || "-"}</span>`;
+      }
       else if (!valor) {
         valor = "-";
       }
@@ -303,7 +272,11 @@ function render(data) {
 
     if (p.lat && p.lng) {
       const marker = L.marker([p.lat, p.lng])
-        .bindPopup(`<b>${p.nombre}</b><br>${p.feria}`);
+        .bindPopup(`
+          <b>${p.nombre}</b><br>
+          ${p.feria}<br>
+          📝 ${p.observaciones || "Sin observaciones"}
+        `);
 
       cluster.addLayer(marker);
       bounds.push([p.lat, p.lng]);
@@ -314,7 +287,6 @@ function render(data) {
   if (bounds.length) map.fitBounds(bounds);
 }
 
-/* BORRAR */
 async function borrar(id) {
   if (!confirm("Eliminar?")) return;
 
@@ -322,7 +294,6 @@ async function borrar(id) {
   cargar();
 }
 
-/* UBICACION */
 function miUbicacion() {
   navigator.geolocation.getCurrentPosition(pos => {
     const lat = pos.coords.latitude;
@@ -333,11 +304,9 @@ function miUbicacion() {
   });
 }
 
-/* EVENTOS */
 document.getElementById("buscar").addEventListener("input", aplicarFiltros);
 document.getElementById("filtroFeria").addEventListener("change", aplicarFiltros);
 
-/* AUTO REFRESH */
 setInterval(cargar, 10000);
 
 </script>
