@@ -1,245 +1,52 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css"/>
-
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
-
-<style>
-
-body {
-  font-family: 'Segoe UI', sans-serif;
-  background: #f0fdf4;
-  margin: 0;
-  color: #064e3b;
-}
-
-.container {
-  max-width: 1200px;
-  margin: auto;
-  padding: 15px;
-}
-
-.login {
-  max-width: 320px;
-  margin: 100px auto;
-  text-align: center;
-}
-
-.login input, .login button {
-  width: 100%;
-  padding: 14px;
-  margin: 8px 0;
-  border-radius: 10px;
-  border: 1px solid #d1d5db;
-}
-
-.login button {
-  background: #16a34a;
-  color: white;
-  font-weight: bold;
-}
-
-.cards {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-.card {
-  flex: 1;
-  background: white;
-  padding: 15px;
-  border-radius: 12px;
-}
-
-.topbar {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-.topbar input, .topbar select, .topbar button {
-  padding: 10px;
-  border-radius: 10px;
-  border: 1px solid #d1d5db;
-}
-
-.topbar button {
-  background: #16a34a;
-  color: white;
-}
-
-.map-container {
-  position: relative;
-  margin-bottom: 10px;
-}
-
-#map {
-  height: 350px;
-  border-radius: 12px;
-}
-
-.map-btn {
-  position: absolute;
-  bottom: 10px;
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  border: none;
-  background: white;
-  box-shadow: 0 3px 10px rgba(0,0,0,0.3);
-  cursor: pointer;
-  z-index: 1000;
-}
-
-.btn-gps { right: 10px; }
-.btn-full { left: 10px; }
-
-.map-container.full {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: 9999;
-  background: white;
-}
-
-.map-container.full #map {
-  height: 100% !important;
-  border-radius: 0;
-}
-
-.table-container {
-  background: white;
-  border-radius: 12px;
-  overflow: auto;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-th {
-  background: #065f46;
-  color: white;
-  padding: 10px;
-}
-
-td {
-  padding: 8px;
-  border-bottom: 1px solid #eee;
-}
-
-tr {
-  cursor: pointer;
-}
-
-tr:hover {
-  background: #bbf7d0;
-}
-
-img {
-  width: 50px;
-  cursor: pointer;
-}
-
-.delete {
-  background: #ef4444;
-  color: white;
-  border: none;
-  padding: 6px;
-  border-radius: 6px;
-}
-
-.modal {
-  display: none;
-  position: fixed;
-  background: rgba(0,0,0,0.8);
-  width: 100%;
-  height: 100%;
-  justify-content: center;
-  align-items: center;
-}
-
-.modal img {
-  max-width: 90%;
-}
-
-</style>
-</head>
-
-<body>
-
-<div id="login" class="login">
-  <h2>🔐 Panel Admin</h2>
-  <input id="user" placeholder="Usuario">
-  <input id="pass" type="password" placeholder="Contraseña">
-  <button onclick="hacerLogin()">Ingresar</button>
-</div>
-
-<div id="panel" class="container" style="display:none;">
-
-<div class="cards">
-  <div class="card">
-    <h3>Total registros</h3>
-    <b id="total"></b>
-  </div>
-</div>
-
-<div class="topbar">
-  <input id="buscar" placeholder="Buscar">
-  <select id="filtroFeria">
-    <option value="">Todas</option>
-    <option>Feria 1</option>
-    <option>Feria 2</option>
-  </select>
-  <button onclick="miUbicacion()">📍</button>
-</div>
-
-<div class="map-container" id="mapContainer">
-  <div id="map"></div>
-  <button class="map-btn btn-gps" onclick="miUbicacion()">📍</button>
-  <button class="map-btn btn-full" onclick="fullscreen()">⛶</button>
-</div>
-
-<div class="table-container">
-<table>
-<thead><tr id="thead"></tr></thead>
-<tbody id="tabla"></tbody>
-</table>
-</div>
-
-</div>
-
-<div id="modal" class="modal" onclick="this.style.display='none'">
-  <img id="imgGrande">
-</div>
-
 <script>
 
 const API = "https://api-ferias-da8q.onrender.com";
-const USER = "admin";
-const PASS = "1234";
+
+let TOKEN = localStorage.getItem("token");
 
 let map, cluster, dataGlobal=[];
 let markersMap = {};
 
-/* LOGIN */
-function hacerLogin(){
-  if(user.value===USER && pass.value===PASS){
+/* LOGIN REAL */
+async function hacerLogin(){
+
+  const res = await fetch(API + "/login", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({
+      user: user.value,
+      pass: pass.value
+    })
+  });
+
+  if(res.ok){
+    const data = await res.json();
+    TOKEN = data.token;
+
+    localStorage.setItem("token", TOKEN);
+
+    login.style.display="none";
+    panel.style.display="block";
+
+    iniciarMapa();
+    cargar();
+
+  } else {
+    alert("Credenciales incorrectas");
+  }
+}
+
+
+/* AUTO LOGIN */
+window.onload = () => {
+  if(TOKEN){
     login.style.display="none";
     panel.style.display="block";
     iniciarMapa();
     cargar();
-  } else alert("Error");
-}
+  }
+};
+
 
 /* MAPA */
 function iniciarMapa(){
@@ -253,6 +60,7 @@ function iniciarMapa(){
   miUbicacion();
 }
 
+
 /* FULLSCREEN */
 function fullscreen(){
   const cont = document.getElementById("mapContainer");
@@ -260,9 +68,9 @@ function fullscreen(){
 
   setTimeout(() => {
     map.invalidateSize();
-    map.setView(map.getCenter());
   }, 300);
 }
+
 
 /* UBICACION */
 function miUbicacion(){
@@ -271,12 +79,26 @@ function miUbicacion(){
   });
 }
 
-/* DATA */
+
+/* CARGAR DATOS (CON TOKEN) */
 async function cargar(){
-  const res=await fetch(API+"/productores");
-  dataGlobal=await res.json();
+
+  const res = await fetch(API + "/productores", {
+    headers: {
+      "Authorization": TOKEN
+    }
+  });
+
+  if(res.status === 401){
+    localStorage.removeItem("token");
+    location.reload();
+    return;
+  }
+
+  dataGlobal = await res.json();
   aplicarFiltros();
 }
+
 
 /* FILTROS */
 function aplicarFiltros(){
@@ -290,6 +112,7 @@ function aplicarFiltros(){
 
   render(filtrados);
 }
+
 
 /* RENDER */
 function render(data){
@@ -334,22 +157,18 @@ function render(data){
   });
 }
 
-/* IR A MARCADOR */
+
+/* IR A MAPA */
 function irA(id){
   const marker = markersMap[id];
   if(!marker) return;
 
   const latlng = marker.getLatLng();
 
-  map.setView(latlng, 17, {
-    animate: true,
-    duration: 0.8
-  });
-
-  setTimeout(()=>{
-    marker.openPopup();
-  }, 400);
+  map.setView(latlng, 17);
+  setTimeout(()=>marker.openPopup(),300);
 }
+
 
 /* IMG */
 function verImg(src){
@@ -357,18 +176,25 @@ function verImg(src){
   imgGrande.src=src;
 }
 
-/* DELETE */
+
+/* DELETE (CON TOKEN) */
 async function borrar(id){
+
   if(!confirm("Eliminar?"))return;
-  await fetch(API+"/productores/"+id,{method:"DELETE"});
+
+  await fetch(API + "/productores/" + id, {
+    method: "DELETE",
+    headers: {
+      "Authorization": TOKEN
+    }
+  });
+
   cargar();
 }
+
 
 /* EVENTOS */
 buscar.addEventListener("input", aplicarFiltros);
 filtroFeria.addEventListener("change", aplicarFiltros);
 
 </script>
-
-</body>
-</html>
