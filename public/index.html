@@ -11,7 +11,6 @@
 
 <style>
 
-/* BASE */
 body {
   font-family: 'Segoe UI', sans-serif;
   background: #f0fdf4;
@@ -25,7 +24,6 @@ body {
   padding: 15px;
 }
 
-/* LOGIN */
 .login {
   max-width: 320px;
   margin: 100px auto;
@@ -46,7 +44,6 @@ body {
   font-weight: bold;
 }
 
-/* STATS */
 .cards {
   display: flex;
   gap: 10px;
@@ -60,7 +57,6 @@ body {
   border-radius: 12px;
 }
 
-/* FILTROS */
 .topbar {
   display: flex;
   gap: 10px;
@@ -78,7 +74,6 @@ body {
   color: white;
 }
 
-/* MAPA */
 .map-container {
   position: relative;
   margin-bottom: 10px;
@@ -89,7 +84,6 @@ body {
   border-radius: 12px;
 }
 
-/* BOTONES */
 .map-btn {
   position: absolute;
   bottom: 10px;
@@ -106,7 +100,6 @@ body {
 .btn-gps { right: 10px; }
 .btn-full { left: 10px; }
 
-/* FULLSCREEN CORRECTO */
 .map-container.full {
   position: fixed;
   top: 0;
@@ -122,7 +115,6 @@ body {
   border-radius: 0;
 }
 
-/* TABLA */
 .table-container {
   background: white;
   border-radius: 12px;
@@ -145,12 +137,27 @@ td {
   border-bottom: 1px solid #eee;
 }
 
+tr {
+  cursor: pointer;
+}
+
+tr:hover {
+  background: #bbf7d0;
+}
+
 img {
   width: 50px;
   cursor: pointer;
 }
 
-/* MODAL */
+.delete {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 6px;
+  border-radius: 6px;
+}
+
 .modal {
   display: none;
   position: fixed;
@@ -170,7 +177,6 @@ img {
 
 <body>
 
-<!-- LOGIN -->
 <div id="login" class="login">
   <h2>🔐 Panel Admin</h2>
   <input id="user" placeholder="Usuario">
@@ -178,7 +184,6 @@ img {
   <button onclick="hacerLogin()">Ingresar</button>
 </div>
 
-<!-- PANEL -->
 <div id="panel" class="container" style="display:none;">
 
 <div class="cards">
@@ -224,6 +229,7 @@ const USER = "admin";
 const PASS = "1234";
 
 let map, cluster, dataGlobal=[];
+let markersMap = {};
 
 /* LOGIN */
 function hacerLogin(){
@@ -247,7 +253,7 @@ function iniciarMapa(){
   miUbicacion();
 }
 
-/* FULLSCREEN FIX REAL */
+/* FULLSCREEN */
 function fullscreen(){
   const cont = document.getElementById("mapContainer");
   cont.classList.toggle("full");
@@ -269,7 +275,20 @@ function miUbicacion(){
 async function cargar(){
   const res=await fetch(API+"/productores");
   dataGlobal=await res.json();
-  render(dataGlobal);
+  aplicarFiltros();
+}
+
+/* FILTROS */
+function aplicarFiltros(){
+  const texto = buscar.value.toLowerCase();
+  const feria = filtroFeria.value;
+
+  const filtrados = dataGlobal.filter(p =>
+    (!feria || p.feria===feria) &&
+    (p.nombre.toLowerCase().includes(texto) || p.dni.includes(texto))
+  );
+
+  render(filtrados);
 }
 
 /* RENDER */
@@ -286,28 +305,50 @@ function render(data){
   thead.innerHTML+="<th></th>";
 
   cluster.clearLayers();
+  markersMap = {};
 
   data.forEach(p=>{
-    let row="<tr>";
+    let row=`<tr onclick="irA(${p.id})">`;
 
     cols.forEach(c=>{
       let val=p[c];
 
       if(c==="foto" && val){
-        val=`<img src="${val}" onclick="verImg('${val}')">`;
+        val=`<img src="${val}" onclick="event.stopPropagation(); verImg('${val}')">`;
       }
       else if(!val) val="-";
 
       row+=`<td>${val}</td>`;
     });
 
-    row+=`<td><button class="delete" onclick="borrar(${p.id})">X</button></td></tr>`;
+    row+=`<td><button class="delete" onclick="event.stopPropagation(); borrar(${p.id})">X</button></td></tr>`;
     tabla.innerHTML+=row;
 
     if(p.lat && p.lng){
-      cluster.addLayer(L.marker([p.lat,p.lng]));
+      const marker = L.marker([p.lat,p.lng])
+        .bindPopup(`<b>${p.nombre}</b><br>${p.feria}`);
+
+      cluster.addLayer(marker);
+      markersMap[p.id] = marker;
     }
   });
+}
+
+/* IR A MARCADOR */
+function irA(id){
+  const marker = markersMap[id];
+  if(!marker) return;
+
+  const latlng = marker.getLatLng();
+
+  map.setView(latlng, 17, {
+    animate: true,
+    duration: 0.8
+  });
+
+  setTimeout(()=>{
+    marker.openPopup();
+  }, 400);
 }
 
 /* IMG */
@@ -322,6 +363,10 @@ async function borrar(id){
   await fetch(API+"/productores/"+id,{method:"DELETE"});
   cargar();
 }
+
+/* EVENTOS */
+buscar.addEventListener("input", aplicarFiltros);
+filtroFeria.addEventListener("change", aplicarFiltros);
 
 </script>
 
