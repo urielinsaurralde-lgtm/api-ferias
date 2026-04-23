@@ -119,14 +119,15 @@ body {
 
 .map-btn {
   position: absolute;
-  bottom: 10px;
-  width: 40px;
-  height: 40px;
+  bottom: 15px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   border: none;
   background: white;
-  box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
   cursor: pointer;
+  z-index: 9999; /* 🔥 CLAVE */
 }
 
 .btn-gps { right: 10px; }
@@ -136,13 +137,15 @@ body {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 9999;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9998;
+  background: #fff;
 }
 
 .map-container.full #map {
-  height: 100%;
+  height: 100% !important;
+  width: 100%;
   border-radius: 0;
 }
 
