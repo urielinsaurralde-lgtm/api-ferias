@@ -13,16 +13,13 @@
 <style>
 
 /* RESET */
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 /* BASE */
 body {
   margin: 0;
   font-family: 'Segoe UI', sans-serif;
   background: #f1f5f9;
-  color: #0f172a;
 }
 
 /* HEADER */
@@ -33,11 +30,6 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-
-.header h2 {
-  margin: 0;
-  font-size: 18px;
 }
 
 .logout {
@@ -70,7 +62,6 @@ body {
 .login button {
   background: #16a34a;
   color: white;
-  font-weight: bold;
 }
 
 /* CONTENIDO */
@@ -80,13 +71,11 @@ body {
   margin: auto;
 }
 
-/* CARD */
 .card {
   background: white;
   border-radius: 15px;
   padding: 15px;
   margin-bottom: 15px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.05);
 }
 
 /* FILTROS */
@@ -127,33 +116,13 @@ body {
   background: white;
   box-shadow: 0 4px 12px rgba(0,0,0,0.3);
   cursor: pointer;
-  z-index: 9999; /* 🔥 CLAVE */
+  z-index: 9999;
 }
 
 .btn-gps { right: 10px; }
 .btn-full { left: 10px; }
 
-.map-container.full {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: 9998;
-  background: #fff;
-}
-
-.map-container.full #map {
-  height: 100% !important;
-  width: 100%;
-  border-radius: 0;
-}
-
 /* TABLA */
-.table-container {
-  overflow: auto;
-}
-
 table {
   width: 100%;
   border-collapse: collapse;
@@ -168,10 +137,6 @@ th {
 td {
   padding: 10px;
   border-bottom: 1px solid #e5e7eb;
-}
-
-tr:hover {
-  background: #dcfce7;
 }
 
 img {
@@ -201,25 +166,12 @@ img {
 
 .modal img {
   max-width: 90%;
-  border-radius: 10px;
 }
 
 /* MOBILE */
 @media (max-width: 600px) {
-
-  .header {
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .topbar {
-    flex-direction: column;
-  }
-
-  #map {
-    height: 250px;
-  }
-
+  .topbar { flex-direction: column; }
+  #map { height: 250px; }
 }
 
 </style>
@@ -245,28 +197,25 @@ img {
 
   <div class="container">
 
-    <!-- FILTROS -->
     <div class="card">
       <div class="topbar">
-        <input id="buscar" placeholder="Buscar por nombre o DNI">
+        <input id="buscar" placeholder="Buscar">
         <select id="filtroFeria">
-          <option value="">Todas las ferias</option>
+          <option value="">Todas</option>
           <option>Feria 1</option>
           <option>Feria 2</option>
         </select>
-        <button onclick="miUbicacion()">📍 Mi ubicación</button>
+        <button onclick="miUbicacion()">📍</button>
       </div>
     </div>
 
-    <!-- MAPA -->
-    <div class="card map-container" id="mapContainer">
+    <div class="card map-container">
       <div id="map"></div>
       <button class="map-btn btn-gps" onclick="miUbicacion()">📍</button>
       <button class="map-btn btn-full" onclick="fullscreen()">⛶</button>
     </div>
 
-    <!-- TABLA -->
-    <div class="card table-container">
+    <div class="card">
       <table>
         <thead><tr id="thead"></tr></thead>
         <tbody id="tabla"></tbody>
@@ -277,20 +226,13 @@ img {
 
 </div>
 
-<!-- MODAL -->
 <div id="modal" class="modal" onclick="this.style.display='none'">
   <img id="imgGrande">
 </div>
 
-<!-- TU SCRIPT ACTUAL VA ACA (NO LO CAMBIES) -->
-
-</body>
-</html>
-
 <script>
 
 const API = "https://api-ferias-da8q.onrender.com";
-
 let TOKEN = localStorage.getItem("token");
 
 let map, cluster, dataGlobal=[];
@@ -310,16 +252,11 @@ document.addEventListener("DOMContentLoaded", () => {
   buscar.addEventListener("input", aplicarFiltros);
   filtroFeria.addEventListener("change", aplicarFiltros);
 
-  // AUTO LOGIN
-  if (TOKEN) {
-    mostrarPanel();
-  }
+  if (TOKEN) mostrarPanel();
 });
-
 
 /* LOGIN */
 async function hacerLogin(){
-
   const user = document.getElementById("user").value;
   const pass = document.getElementById("pass").value;
 
@@ -331,32 +268,24 @@ async function hacerLogin(){
 
   if(res.ok){
     const data = await res.json();
-
     TOKEN = data.token;
     localStorage.setItem("token", TOKEN);
-
     mostrarPanel();
-  } else {
-    alert("Credenciales incorrectas");
-  }
+  } else alert("Credenciales incorrectas");
 }
 
 function mostrarPanel(){
   document.getElementById("login").style.display="none";
   document.getElementById("panel").style.display="block";
-
   iniciarMapa();
   cargar();
 }
 
-
 /* MAPA */
 function iniciarMapa(){
-
   if(map) return;
 
   map = L.map("map").setView([-31.73,-60.53],12);
-
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
   cluster = L.markerClusterGroup();
@@ -365,64 +294,43 @@ function iniciarMapa(){
   miUbicacion();
 }
 
-
-/* UBICACION */
 function miUbicacion(){
   navigator.geolocation.getCurrentPosition(p=>{
     map.setView([p.coords.latitude,p.coords.longitude],14);
   });
 }
 
-
-/* FULLSCREEN */
 function fullscreen(){
-  const cont = document.getElementById("mapContainer");
-  cont.classList.toggle("full");
-
+  document.querySelector(".map-container").classList.toggle("full");
   setTimeout(() => map.invalidateSize(), 300);
 }
 
-
-/* CARGAR */
+/* DATA */
 async function cargar(){
-
   const res = await fetch(API + "/productores", {
-    headers: {
-      "Authorization": "Bearer " + TOKEN
-    }
+    headers: { "Authorization": "Bearer " + TOKEN }
   });
 
-  if(res.status === 401){
-    logout();
-    return;
-  }
+  if(res.status === 401){ logout(); return; }
 
   dataGlobal = await res.json();
   aplicarFiltros();
 }
 
-
-/* FILTROS */
 function aplicarFiltros(){
-
   const texto = buscar.value.toLowerCase();
   const feria = filtroFeria.value;
 
   const filtrados = dataGlobal.filter(p =>
     (!feria || p.feria===feria) &&
-    (
-      (p.nombre && p.nombre.toLowerCase().includes(texto)) ||
-      (p.dni && p.dni.toString().includes(texto))
-    )
+    ((p.nombre && p.nombre.toLowerCase().includes(texto)) ||
+     (p.dni && p.dni.toString().includes(texto)))
   );
 
   render(filtrados);
 }
 
-
-/* RENDER */
 function render(data){
-
   tabla.innerHTML="";
   thead.innerHTML="";
 
@@ -437,7 +345,6 @@ function render(data){
   markersMap = {};
 
   data.forEach(p=>{
-
     let row=`<tr onclick="irA(${p.id})">`;
 
     cols.forEach(c=>{
@@ -464,8 +371,6 @@ function render(data){
   });
 }
 
-
-/* IR A MAPA */
 function irA(id){
   const marker = markersMap[id];
   if(!marker) return;
@@ -474,31 +379,22 @@ function irA(id){
   setTimeout(()=>marker.openPopup(),300);
 }
 
-
-/* IMG */
 function verImg(src){
   modal.style.display="flex";
   imgGrande.src=src;
 }
 
-
-/* DELETE */
 async function borrar(id){
-
   if(!confirm("Eliminar?")) return;
 
   await fetch(API + "/productores/" + id, {
     method: "DELETE",
-    headers: {
-      "Authorization": "Bearer " + TOKEN
-    }
+    headers: { "Authorization": "Bearer " + TOKEN }
   });
 
   cargar();
 }
 
-
-/* LOGOUT */
 function logout(){
   localStorage.removeItem("token");
   location.reload();
