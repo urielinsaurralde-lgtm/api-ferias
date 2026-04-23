@@ -1,6 +1,3 @@
-const jwt = require("jsonwebtoken");
-const SECRET = "clave_super_secreta";
-
 const express = require("express");
 const mysql = require("mysql2");
 const cors = require("cors");
@@ -32,39 +29,6 @@ const db = mysql.createPool({
   database: process.env.DB_NAME || "railway",
   port: process.env.DB_PORT || 17892
 });
-
-
-// 🔐 LOGIN
-app.post("/login", (req, res) => {
-  const { user, pass } = req.body;
-
-  if (user === "admin" && pass === "1234") {
-    const token = jwt.sign({ user }, SECRET, { expiresIn: "8h" });
-    return res.json({ token });
-  }
-
-  res.status(401).send("Credenciales incorrectas");
-});
-
-
-// 🔐 MIDDLEWARE JWT (ARREGLADO)
-function verificarToken(req, res, next) {
-
-  const authHeader = req.headers["authorization"];
-
-  if (!authHeader) return res.status(403).send("Token requerido");
-
-  const token = authHeader.split(" ")[1]; // 🔥 CLAVE
-
-  if (!token) return res.status(403).send("Token inválido");
-
-  jwt.verify(token, SECRET, (err, decoded) => {
-    if (err) return res.status(401).send("Token inválido");
-
-    req.user = decoded;
-    next();
-  });
-}
 
 
 // 👉 GUARDAR
@@ -109,29 +73,27 @@ app.post("/guardar", upload.single("foto"), async (req, res) => {
       fotoUrl,
       fecha
     ], err => {
-      if (err) {
-        console.log(err);
-        return res.status(500).send("Error DB");
-      }
+      if (err) return res.status(500).send(err);
       res.send("OK");
     });
 
   } catch (e) {
-    console.log(e);
     res.status(500).send("Error");
   }
 });
 
 
-// 🔐 PROTEGIDOS
-app.get("/productores", verificarToken, (req, res) => {
+// 👉 OBTENER
+app.get("/productores", (req, res) => {
   db.query("SELECT * FROM productores ORDER BY id DESC", (err, results) => {
     if (err) return res.status(500).send(err);
     res.json(results);
   });
 });
 
-app.delete("/productores/:id", verificarToken, (req, res) => {
+
+// 👉 ELIMINAR
+app.delete("/productores/:id", (req, res) => {
   db.query("DELETE FROM productores WHERE id=?", [req.params.id], err => {
     if (err) return res.status(500).send(err);
     res.send("OK");

@@ -2,16 +2,12 @@
 
 const API = "https://api-ferias-da8q.onrender.com";
 
-let TOKEN = localStorage.getItem("token");
-
 let map, cluster, dataGlobal=[];
 let markersMap = {};
 
 // DOM
 let buscar, filtroFeria, tabla, thead, total, modal, imgGrande;
 
-
-/* INIT */
 document.addEventListener("DOMContentLoaded", () => {
 
   buscar = document.getElementById("buscar");
@@ -25,53 +21,13 @@ document.addEventListener("DOMContentLoaded", () => {
   if (buscar) buscar.addEventListener("input", aplicarFiltros);
   if (filtroFeria) filtroFeria.addEventListener("change", aplicarFiltros);
 
-  if (TOKEN) {
-    document.getElementById("login").style.display="none";
-    document.getElementById("panel").style.display="block";
-
-    iniciarMapa();
-    cargar();
-  }
+  iniciarMapa();
+  cargar();
 });
-
-
-/* LOGIN */
-async function hacerLogin(){
-
-  const userInput = document.getElementById("user").value;
-  const passInput = document.getElementById("pass").value;
-
-  const res = await fetch(API + "/login", {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({ user: userInput, pass: passInput })
-  });
-
-  if(res.ok){
-    const data = await res.json();
-
-    TOKEN = data.token;
-    localStorage.setItem("token", TOKEN);
-
-    document.getElementById("login").style.display="none";
-    document.getElementById("panel").style.display="block";
-
-    iniciarMapa();
-    cargar();
-
-  } else {
-    alert("Credenciales incorrectas");
-  }
-}
 
 
 /* MAPA */
 function iniciarMapa(){
-
-  if(map) return;
-
-  const mapDiv = document.getElementById("map");
-  if(!mapDiv) return;
 
   map = L.map("map").setView([-31.73,-60.53],12);
 
@@ -84,15 +40,6 @@ function iniciarMapa(){
 }
 
 
-/* FULL */
-function fullscreen(){
-  const cont = document.getElementById("mapContainer");
-  cont.classList.toggle("full");
-
-  setTimeout(() => map.invalidateSize(), 300);
-}
-
-
 /* UBICACION */
 function miUbicacion(){
   navigator.geolocation.getCurrentPosition(p=>{
@@ -101,35 +48,27 @@ function miUbicacion(){
 }
 
 
+/* FULLSCREEN */
+function fullscreen(){
+  const cont = document.getElementById("mapContainer");
+  cont.classList.toggle("full");
+
+  setTimeout(() => map.invalidateSize(), 300);
+}
+
+
 /* CARGAR */
 async function cargar(){
 
-  try {
+  const res = await fetch(API + "/productores");
+  dataGlobal = await res.json();
 
-    const res = await fetch(API + "/productores", {
-      headers: { "Authorization": "Bearer " + TOKEN }
-    });
-
-    if(res.status === 401){
-      localStorage.removeItem("token");
-      location.reload();
-      return;
-    }
-
-    dataGlobal = await res.json();
-    aplicarFiltros();
-
-  } catch(e){
-    console.error(e);
-    alert("Error cargando datos");
-  }
+  aplicarFiltros();
 }
 
 
 /* FILTROS */
 function aplicarFiltros(){
-
-  if(!buscar || !filtroFeria) return;
 
   const texto = buscar.value.toLowerCase();
   const feria = filtroFeria.value;
@@ -148,8 +87,6 @@ function aplicarFiltros(){
 
 /* RENDER */
 function render(data){
-
-  if(!tabla || !thead || !total) return;
 
   tabla.innerHTML="";
   thead.innerHTML="";
@@ -217,8 +154,7 @@ async function borrar(id){
   if(!confirm("Eliminar?")) return;
 
   await fetch(API + "/productores/" + id, {
-    method: "DELETE",
-    headers: { "Authorization": "Bearer " + TOKEN }
+    method: "DELETE"
   });
 
   cargar();
