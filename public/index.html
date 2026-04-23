@@ -12,26 +12,59 @@
 
 <style>
 
+/* RESET */
+* {
+  box-sizing: border-box;
+}
+
+/* BASE */
 body {
-  font-family: 'Segoe UI', sans-serif;
-  background: #f0fdf4;
   margin: 0;
-  color: #064e3b;
+  font-family: 'Segoe UI', sans-serif;
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+/* HEADER */
+.header {
+  background: #16a34a;
+  color: white;
+  padding: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.logout {
+  background: #dc2626;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
 }
 
 /* LOGIN */
 .login {
   max-width: 320px;
   margin: 100px auto;
-  text-align: center;
+  background: white;
+  padding: 25px;
+  border-radius: 15px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
 }
 
 .login input, .login button {
   width: 100%;
-  padding: 14px;
+  padding: 12px;
   margin: 8px 0;
   border-radius: 10px;
-  border: 1px solid #d1d5db;
+  border: 1px solid #e2e8f0;
 }
 
 .login button {
@@ -40,24 +73,33 @@ body {
   font-weight: bold;
 }
 
-/* PANEL */
+/* CONTENIDO */
 .container {
+  padding: 15px;
   max-width: 1200px;
   margin: auto;
-  padding: 15px;
 }
 
-/* TOPBAR */
+/* CARD */
+.card {
+  background: white;
+  border-radius: 15px;
+  padding: 15px;
+  margin-bottom: 15px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+}
+
+/* FILTROS */
 .topbar {
   display: flex;
   gap: 10px;
-  margin-bottom: 10px;
+  flex-wrap: wrap;
 }
 
 .topbar input, .topbar select, .topbar button {
   padding: 10px;
   border-radius: 10px;
-  border: 1px solid #d1d5db;
+  border: 1px solid #e2e8f0;
 }
 
 .topbar button {
@@ -68,7 +110,6 @@ body {
 /* MAPA */
 .map-container {
   position: relative;
-  margin-bottom: 10px;
 }
 
 #map {
@@ -79,39 +120,34 @@ body {
 .map-btn {
   position: absolute;
   bottom: 10px;
-  width: 42px;
-  height: 42px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   border: none;
   background: white;
   box-shadow: 0 3px 10px rgba(0,0,0,0.3);
   cursor: pointer;
-  z-index: 1000;
 }
 
 .btn-gps { right: 10px; }
 .btn-full { left: 10px; }
 
-/* FULLSCREEN */
 .map-container.full {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   z-index: 9999;
-  background: white;
 }
 
 .map-container.full #map {
-  height: 100% !important;
+  height: 100%;
   border-radius: 0;
 }
 
 /* TABLA */
 .table-container {
-  background: white;
-  border-radius: 12px;
   overflow: auto;
 }
 
@@ -121,29 +157,30 @@ table {
 }
 
 th {
-  background: #065f46;
+  background: #16a34a;
   color: white;
   padding: 10px;
 }
 
 td {
-  padding: 8px;
-  border-bottom: 1px solid #eee;
+  padding: 10px;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 tr:hover {
-  background: #bbf7d0;
+  background: #dcfce7;
 }
 
 img {
   width: 50px;
+  border-radius: 8px;
   cursor: pointer;
 }
 
 .delete {
   background: #ef4444;
-  color: white;
   border: none;
+  color: white;
   padding: 6px;
   border-radius: 6px;
 }
@@ -161,23 +198,25 @@ img {
 
 .modal img {
   max-width: 90%;
+  border-radius: 10px;
 }
 
-/* HEADER */
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
+/* MOBILE */
+@media (max-width: 600px) {
 
-.logout {
-  background: #ef4444;
-  color: white;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 8px;
-  cursor: pointer;
+  .header {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .topbar {
+    flex-direction: column;
+  }
+
+  #map {
+    height: 250px;
+  }
+
 }
 
 </style>
@@ -194,34 +233,43 @@ img {
 </div>
 
 <!-- PANEL -->
-<div id="panel" class="container" style="display:none;">
+<div id="panel" style="display:none;">
 
   <div class="header">
     <h2>📊 Dashboard</h2>
-    <button class="logout" onclick="logout()">Cerrar sesión</button>
+    <button class="logout" onclick="logout()">Salir</button>
   </div>
 
-  <div class="topbar">
-    <input id="buscar" placeholder="Buscar">
-    <select id="filtroFeria">
-      <option value="">Todas</option>
-      <option>Feria 1</option>
-      <option>Feria 2</option>
-    </select>
-    <button onclick="miUbicacion()">📍</button>
-  </div>
+  <div class="container">
 
-  <div class="map-container" id="mapContainer">
-    <div id="map"></div>
-    <button class="map-btn btn-gps" onclick="miUbicacion()">📍</button>
-    <button class="map-btn btn-full" onclick="fullscreen()">⛶</button>
-  </div>
+    <!-- FILTROS -->
+    <div class="card">
+      <div class="topbar">
+        <input id="buscar" placeholder="Buscar por nombre o DNI">
+        <select id="filtroFeria">
+          <option value="">Todas las ferias</option>
+          <option>Feria 1</option>
+          <option>Feria 2</option>
+        </select>
+        <button onclick="miUbicacion()">📍 Mi ubicación</button>
+      </div>
+    </div>
 
-  <div class="table-container">
-    <table>
-      <thead><tr id="thead"></tr></thead>
-      <tbody id="tabla"></tbody>
-    </table>
+    <!-- MAPA -->
+    <div class="card map-container" id="mapContainer">
+      <div id="map"></div>
+      <button class="map-btn btn-gps" onclick="miUbicacion()">📍</button>
+      <button class="map-btn btn-full" onclick="fullscreen()">⛶</button>
+    </div>
+
+    <!-- TABLA -->
+    <div class="card table-container">
+      <table>
+        <thead><tr id="thead"></tr></thead>
+        <tbody id="tabla"></tbody>
+      </table>
+    </div>
+
   </div>
 
 </div>
@@ -230,6 +278,11 @@ img {
 <div id="modal" class="modal" onclick="this.style.display='none'">
   <img id="imgGrande">
 </div>
+
+<!-- TU SCRIPT ACTUAL VA ACA (NO LO CAMBIES) -->
+
+</body>
+</html>
 
 <script>
 
