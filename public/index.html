@@ -3,7 +3,6 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<!-- LEAFLET -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css"/>
 
@@ -12,166 +11,92 @@
 
 <style>
 
-/* RESET */
-* { box-sizing: border-box; }
+*{box-sizing:border-box;}
 
-/* BASE */
-body {
-  margin: 0;
-  font-family: 'Segoe UI', sans-serif;
-  background: #f1f5f9;
-}
-
-/* HEADER */
-.header {
-  background: #16a34a;
-  color: white;
-  padding: 15px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.logout {
-  background: #dc2626;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 8px;
-  color: white;
-  cursor: pointer;
+body{
+  margin:0;
+  font-family:'Segoe UI';
+  background:#f1f5f9;
 }
 
 /* LOGIN */
-.login {
-  max-width: 320px;
-  margin: 100px auto;
-  background: white;
-  padding: 25px;
-  border-radius: 15px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+.login{
+  max-width:320px;
+  margin:100px auto;
+  background:white;
+  padding:25px;
+  border-radius:15px;
+  box-shadow:0 10px 25px rgba(0,0,0,0.1);
 }
 
-.login input, .login button {
-  width: 100%;
-  padding: 12px;
-  margin: 8px 0;
-  border-radius: 10px;
-  border: 1px solid #e2e8f0;
+.login input,.login button{
+  width:100%;
+  padding:12px;
+  margin:8px 0;
+  border-radius:10px;
+  border:1px solid #ddd;
 }
 
-.login button {
-  background: #16a34a;
-  color: white;
+.login button{
+  background:#16a34a;
+  color:white;
 }
 
-/* CONTENIDO */
-.container {
-  padding: 15px;
-  max-width: 1200px;
-  margin: auto;
+/* HEADER */
+.header{
+  background:#16a34a;
+  color:white;
+  padding:15px;
+  display:flex;
+  justify-content:space-between;
 }
 
-.card {
-  background: white;
-  border-radius: 15px;
-  padding: 15px;
-  margin-bottom: 15px;
+.logout{
+  background:#dc2626;
+  border:none;
+  color:white;
+  padding:8px;
+  border-radius:8px;
 }
 
-/* FILTROS */
-.topbar {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
+/* CONTENT */
+.container{
+  padding:15px;
+  max-width:1200px;
+  margin:auto;
 }
 
-.topbar input, .topbar select, .topbar button {
-  padding: 10px;
-  border-radius: 10px;
-  border: 1px solid #e2e8f0;
+.card{
+  background:white;
+  padding:15px;
+  border-radius:12px;
+  margin-bottom:15px;
 }
 
-.topbar button {
-  background: #16a34a;
-  color: white;
+/* MAP */
+#map{
+  height:300px;
+  border-radius:10px;
 }
 
-/* MAPA */
-.map-container {
-  position: relative;
+/* TABLE */
+table{
+  width:100%;
+  border-collapse:collapse;
 }
 
-#map {
-  height: 350px;
-  border-radius: 12px;
+th{
+  background:#16a34a;
+  color:white;
 }
 
-.map-btn {
-  position: absolute;
-  bottom: 15px;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  border: none;
-  background: white;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-  cursor: pointer;
-  z-index: 9999;
-}
-
-.btn-gps { right: 10px; }
-.btn-full { left: 10px; }
-
-/* TABLA */
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-th {
-  background: #16a34a;
-  color: white;
-  padding: 10px;
-}
-
-td {
-  padding: 10px;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-img {
-  width: 50px;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.delete {
-  background: #ef4444;
-  border: none;
-  color: white;
-  padding: 6px;
-  border-radius: 6px;
-}
-
-/* MODAL */
-.modal {
-  display: none;
-  position: fixed;
-  background: rgba(0,0,0,0.8);
-  width: 100%;
-  height: 100%;
-  justify-content: center;
-  align-items: center;
-}
-
-.modal img {
-  max-width: 90%;
+td,th{
+  padding:10px;
 }
 
 /* MOBILE */
-@media (max-width: 600px) {
-  .topbar { flex-direction: column; }
-  #map { height: 250px; }
+@media(max-width:600px){
+  #map{height:250px;}
 }
 
 </style>
@@ -179,222 +104,137 @@ img {
 
 <body>
 
-<!-- LOGIN -->
 <div id="login" class="login">
-  <h2>🔐 Panel Admin</h2>
+  <h2>🔐 Panel</h2>
   <input id="user" placeholder="Usuario">
   <input id="pass" type="password" placeholder="Contraseña">
-  <button onclick="hacerLogin()">Ingresar</button>
+  <button onclick="login()">Ingresar</button>
 </div>
 
-<!-- PANEL -->
-<div id="panel" style="display:none;">
+<div id="panel" style="display:none">
 
-  <div class="header">
-    <h2>📊 Dashboard</h2>
-    <button class="logout" onclick="logout()">Salir</button>
-  </div>
+<div class="header">
+  <b>Dashboard</b>
+  <button class="logout" onclick="logout()">Salir</button>
+</div>
 
-  <div class="container">
+<div class="container">
 
-    <div class="card">
-      <div class="topbar">
-        <input id="buscar" placeholder="Buscar">
-        <select id="filtroFeria">
-          <option value="">Todas</option>
-          <option>Feria 1</option>
-          <option>Feria 2</option>
-        </select>
-        <button onclick="miUbicacion()">📍</button>
-      </div>
-    </div>
+<div class="card">
+  <input id="buscar" placeholder="Buscar">
+</div>
 
-    <div class="card map-container">
-      <div id="map"></div>
-      <button class="map-btn btn-gps" onclick="miUbicacion()">📍</button>
-      <button class="map-btn btn-full" onclick="fullscreen()">⛶</button>
-    </div>
+<div class="card">
+  <div id="map"></div>
+</div>
 
-    <div class="card">
-      <table>
-        <thead><tr id="thead"></tr></thead>
-        <tbody id="tabla"></tbody>
-      </table>
-    </div>
-
-  </div>
+<div class="card">
+<table>
+<thead><tr id="thead"></tr></thead>
+<tbody id="tabla"></tbody>
+</table>
+</div>
 
 </div>
 
-<div id="modal" class="modal" onclick="this.style.display='none'">
-  <img id="imgGrande">
 </div>
 
 <script>
 
-const API = "https://api-ferias-da8q.onrender.com";
-let TOKEN = localStorage.getItem("token");
+const API="https://api-ferias-da8q.onrender.com";
+let TOKEN=localStorage.getItem("token");
 
-let map, cluster, dataGlobal=[];
-let markersMap = {};
+let map,cluster,dataGlobal=[];
 
-let buscar, filtroFeria, tabla, thead, modal, imgGrande;
-
-document.addEventListener("DOMContentLoaded", () => {
-
-  buscar = document.getElementById("buscar");
-  filtroFeria = document.getElementById("filtroFeria");
-  tabla = document.getElementById("tabla");
-  thead = document.getElementById("thead");
-  modal = document.getElementById("modal");
-  imgGrande = document.getElementById("imgGrande");
-
-  buscar.addEventListener("input", aplicarFiltros);
-  filtroFeria.addEventListener("change", aplicarFiltros);
-
-  if (TOKEN) mostrarPanel();
+/* INIT */
+document.addEventListener("DOMContentLoaded",()=>{
+  if(TOKEN) iniciar();
 });
 
 /* LOGIN */
-async function hacerLogin(){
-  const user = document.getElementById("user").value;
-  const pass = document.getElementById("pass").value;
-
-  const res = await fetch(API + "/login", {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({ user, pass })
+async function login(){
+  const res=await fetch(API+"/login",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      user:user.value,
+      pass:pass.value
+    })
   });
 
   if(res.ok){
-    const data = await res.json();
-    TOKEN = data.token;
-    localStorage.setItem("token", TOKEN);
-    mostrarPanel();
-  } else alert("Credenciales incorrectas");
+    const d=await res.json();
+    TOKEN=d.token;
+    localStorage.setItem("token",TOKEN);
+    iniciar();
+  }else alert("Error login");
 }
 
-function mostrarPanel(){
-  document.getElementById("login").style.display="none";
-  document.getElementById("panel").style.display="block";
+function iniciar(){
+  login.style.display="none";
+  panel.style.display="block";
   iniciarMapa();
   cargar();
 }
 
-/* MAPA */
+/* MAP */
 function iniciarMapa(){
-  if(map) return;
+  map=L.map("map").setView([-31.73,-60.53],12);
 
-  map = L.map("map").setView([-31.73,-60.53],12);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
-  cluster = L.markerClusterGroup();
-  map.addLayer(cluster);
-
-  miUbicacion();
-}
-
-function miUbicacion(){
-  navigator.geolocation.getCurrentPosition(p=>{
-    map.setView([p.coords.latitude,p.coords.longitude],14);
+  cluster=L.markerClusterGroup({
+    chunkedLoading:true
   });
-}
 
-function fullscreen(){
-  document.querySelector(".map-container").classList.toggle("full");
-  setTimeout(() => map.invalidateSize(), 300);
+  map.addLayer(cluster);
 }
 
 /* DATA */
 async function cargar(){
-  const res = await fetch(API + "/productores", {
-    headers: { "Authorization": "Bearer " + TOKEN }
+  const res=await fetch(API+"/productores",{
+    headers:{Authorization:"Bearer "+TOKEN}
   });
 
-  if(res.status === 401){ logout(); return; }
+  if(res.status===401)return logout();
 
-  dataGlobal = await res.json();
-  aplicarFiltros();
+  dataGlobal=await res.json();
+  render(dataGlobal);
 }
 
-function aplicarFiltros(){
-  const texto = buscar.value.toLowerCase();
-  const feria = filtroFeria.value;
-
-  const filtrados = dataGlobal.filter(p =>
-    (!feria || p.feria===feria) &&
-    ((p.nombre && p.nombre.toLowerCase().includes(texto)) ||
-     (p.dni && p.dni.toString().includes(texto)))
-  );
-
-  render(filtrados);
-}
-
+/* RENDER */
 function render(data){
+
   tabla.innerHTML="";
   thead.innerHTML="";
 
-  if(!data.length) return;
+  if(!data.length)return;
 
-  const cols = Object.keys(data[0]).filter(c => c !== "lng");
+  const cols=Object.keys(data[0]);
 
   cols.forEach(c=>thead.innerHTML+=`<th>${c}</th>`);
-  thead.innerHTML+="<th></th>";
 
   cluster.clearLayers();
-  markersMap = {};
 
   data.forEach(p=>{
-    let row=`<tr onclick="irA(${p.id})">`;
+
+    let row="<tr>";
 
     cols.forEach(c=>{
-      let val=p[c];
-
-      if(c==="foto" && val){
-        val=`<img src="${val}" onclick="event.stopPropagation(); verImg('${val}')">`;
-      }
-      else if(!val) val="-";
-
-      row+=`<td>${val}</td>`;
+      row+=`<td>${p[c]||"-"}</td>`;
     });
 
-    row+=`<td><button class="delete" onclick="event.stopPropagation(); borrar(${p.id})">X</button></td></tr>`;
+    row+="</tr>";
     tabla.innerHTML+=row;
 
     if(p.lat && p.lng){
-      const marker = L.marker([p.lat,p.lng])
-        .bindPopup(`<b>${p.nombre}</b><br>${p.feria}`);
-
-      cluster.addLayer(marker);
-      markersMap[p.id] = marker;
+      cluster.addLayer(L.marker([p.lat,p.lng]));
     }
+
   });
 }
 
-function irA(id){
-  const marker = markersMap[id];
-  if(!marker) return;
-
-  map.setView(marker.getLatLng(), 17);
-  setTimeout(()=>marker.openPopup(),300);
-}
-
-function verImg(src){
-  modal.style.display="flex";
-  imgGrande.src=src;
-}
-
-async function borrar(id){
-  if(!confirm("Eliminar?")) return;
-
-  await fetch(API + "/productores/" + id, {
-    method: "DELETE",
-    headers: { "Authorization": "Bearer " + TOKEN }
-  });
-
-  cargar();
-}
-
+/* LOGOUT */
 function logout(){
   localStorage.removeItem("token");
   location.reload();
