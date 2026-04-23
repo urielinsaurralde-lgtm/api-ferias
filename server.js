@@ -43,17 +43,23 @@ const db = mysql.createPool({
    LOGIN
 ========================= */
 app.post("/login", (req, res) => {
-  const { user, pass } = req.body;
+  try {
+    const { user, pass } = req.body;
 
-  const USER = process.env.ADMIN_USER || "admin";
-  const PASS = process.env.ADMIN_PASS || "1234";
+    const USER = process.env.ADMIN_USER || "admin";
+    const PASS = process.env.ADMIN_PASS || "1234";
 
-  if (user === USER && pass === PASS) {
-    const token = jwt.sign({ user }, SECRET, { expiresIn: "8h" });
-    return res.json({ token });
+    if (user === USER && pass === PASS) {
+      const token = jwt.sign({ user }, SECRET, { expiresIn: "8h" });
+      return res.json({ token });
+    }
+
+    res.status(401).send("Credenciales incorrectas");
+
+  } catch (err) {
+    console.log("ERROR LOGIN:", err);
+    res.status(500).send("Error servidor");
   }
-
-  res.status(401).send("Credenciales incorrectas");
 });
 
 /* =========================
@@ -64,12 +70,20 @@ function verificarToken(req, res, next) {
 
   if (!header) return res.status(403).send("Token requerido");
 
-  const token = header.startsWith("Bearer ")
-    ? header.split(" ")[1]
-    : header;
+  let token;
+
+  if (header.startsWith("Bearer ")) {
+    token = header.split(" ")[1];
+  } else {
+    token = header;
+  }
 
   jwt.verify(token, SECRET, (err, decoded) => {
-    if (err) return res.status(401).send("Token inválido");
+    if (err) {
+      console.log("TOKEN ERROR:", err);
+      return res.status(401).send("Token inválido");
+    }
+
     req.user = decoded;
     next();
   });
@@ -97,7 +111,9 @@ app.post("/guardar", upload.single("foto"), async (req, res) => {
       });
 
       fotoUrl = result.secure_url;
-      fs.unlinkSync(req.file.path);
+
+      // borrar archivo temporal
+      fs.unlink(req.file.path, () => {});
     }
 
     const sql = `
@@ -120,15 +136,16 @@ app.post("/guardar", upload.single("foto"), async (req, res) => {
       fecha
     ], err => {
       if (err) {
-        console.log(err);
+        console.log("DB ERROR:", err);
         return res.status(500).send("Error DB");
       }
+
       res.send("OK");
     });
 
   } catch (e) {
-    console.log(e);
-    res.status(500).send("Error");
+    console.log("ERROR GUARDAR:", e);
+    res.status(500).send("Error servidor");
   }
 });
 
@@ -137,7 +154,11 @@ app.post("/guardar", upload.single("foto"), async (req, res) => {
 ========================= */
 app.get("/productores", verificarToken, (req, res) => {
   db.query("SELECT * FROM productores ORDER BY id DESC", (err, results) => {
-    if (err) return res.status(500).send(err);
+    if (err) {
+      console.log("DB ERROR:", err);
+      return res.status(500).send("Error DB");
+    }
+
     res.json(results);
   });
 });
@@ -147,7 +168,11 @@ app.get("/productores", verificarToken, (req, res) => {
 ========================= */
 app.delete("/productores/:id", verificarToken, (req, res) => {
   db.query("DELETE FROM productores WHERE id=?", [req.params.id], err => {
-    if (err) return res.status(500).send(err);
+    if (err) {
+      console.log("DELETE ERROR:", err);
+      return res.status(500).send("Error DB");
+    }
+
     res.send("OK");
   });
 });
