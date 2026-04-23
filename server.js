@@ -39,12 +39,26 @@ const db = mysql.createPool({
   connectionLimit: 10
 });
 
+// Test conexión
+db.getConnection((err, conn) => {
+  if (err) {
+    console.log("❌ ERROR CONEXIÓN DB:", err);
+  } else {
+    console.log("✅ DB conectada");
+    conn.release();
+  }
+});
+
 /* =========================
    LOGIN
 ========================= */
 app.post("/login", (req, res) => {
   try {
     const { user, pass } = req.body;
+
+    if (!user || !pass) {
+      return res.status(400).send("Faltan datos");
+    }
 
     const USER = process.env.ADMIN_USER || "admin";
     const PASS = process.env.ADMIN_PASS || "1234";
@@ -57,7 +71,7 @@ app.post("/login", (req, res) => {
     res.status(401).send("Credenciales incorrectas");
 
   } catch (err) {
-    console.log("ERROR LOGIN:", err);
+    console.log("❌ ERROR LOGIN:", err);
     res.status(500).send("Error servidor");
   }
 });
@@ -66,21 +80,22 @@ app.post("/login", (req, res) => {
    MIDDLEWARE TOKEN
 ========================= */
 function verificarToken(req, res, next) {
+
   const header = req.headers["authorization"];
 
-  if (!header) return res.status(403).send("Token requerido");
+  if (!header) {
+    return res.status(403).send("Token requerido");
+  }
 
-  let token;
+  let token = header;
 
   if (header.startsWith("Bearer ")) {
     token = header.split(" ")[1];
-  } else {
-    token = header;
   }
 
   jwt.verify(token, SECRET, (err, decoded) => {
     if (err) {
-      console.log("TOKEN ERROR:", err);
+      console.log("❌ TOKEN ERROR:", err.message);
       return res.status(401).send("Token inválido");
     }
 
@@ -93,8 +108,13 @@ function verificarToken(req, res, next) {
    GUARDAR
 ========================= */
 app.post("/guardar", upload.single("foto"), async (req, res) => {
+
   try {
     const data = req.body;
+
+    if (!data.nombre || !data.dni) {
+      return res.status(400).send("Datos incompletos");
+    }
 
     const fecha = new Date().toLocaleString("es-AR", {
       timeZone: "America/Argentina/Buenos_Aires"
@@ -103,17 +123,21 @@ app.post("/guardar", upload.single("foto"), async (req, res) => {
     let fotoUrl = null;
 
     if (req.file) {
-      const result = await cloudinary.uploader.upload(req.file.path, {
-        transformation: [
-          { width: 2000, height: 2000, crop: "limit" },
-          { quality: "auto" }
-        ]
-      });
+      try {
+        const result = await cloudinary.uploader.upload(req.file.path, {
+          transformation: [
+            { width: 2000, height: 2000, crop: "limit" },
+            { quality: "auto" }
+          ]
+        });
 
-      fotoUrl = result.secure_url;
+        fotoUrl = result.secure_url;
 
-      // borrar archivo temporal
-      fs.unlink(req.file.path, () => {});
+        fs.unlink(req.file.path, () => {});
+
+      } catch (err) {
+        console.log("⚠️ ERROR CLOUDINARY:", err);
+      }
     }
 
     const sql = `
@@ -134,9 +158,10 @@ app.post("/guardar", upload.single("foto"), async (req, res) => {
       data.lng,
       fotoUrl,
       fecha
-    ], err => {
+    ], (err) => {
+
       if (err) {
-        console.log("DB ERROR:", err);
+        console.log("❌ DB ERROR:", err);
         return res.status(500).send("Error DB");
       }
 
@@ -144,7 +169,7 @@ app.post("/guardar", upload.single("foto"), async (req, res) => {
     });
 
   } catch (e) {
-    console.log("ERROR GUARDAR:", e);
+    console.log("❌ ERROR GUARDAR:", e);
     res.status(500).send("Error servidor");
   }
 });
@@ -153,9 +178,11 @@ app.post("/guardar", upload.single("foto"), async (req, res) => {
    OBTENER
 ========================= */
 app.get("/productores", verificarToken, (req, res) => {
+
   db.query("SELECT * FROM productores ORDER BY id DESC", (err, results) => {
+
     if (err) {
-      console.log("DB ERROR:", err);
+      console.log("❌ DB ERROR:", err);
       return res.status(500).send("Error DB");
     }
 
@@ -167,9 +194,15 @@ app.get("/productores", verificarToken, (req, res) => {
    ELIMINAR
 ========================= */
 app.delete("/productores/:id", verificarToken, (req, res) => {
-  db.query("DELETE FROM productores WHERE id=?", [req.params.id], err => {
+
+  const id = req.params.id;
+
+  if (!id) return res.status(400).send("ID requerido");
+
+  db.query("DELETE FROM productores WHERE id=?", [id], (err) => {
+
     if (err) {
-      console.log("DELETE ERROR:", err);
+      console.log("❌ DELETE ERROR:", err);
       return res.status(500).send("Error DB");
     }
 
@@ -190,5 +223,5 @@ app.get("/", (req, res) => {
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log("Servidor corriendo en puerto " + PORT);
+  console.log("🚀 Servidor corriendo en puerto " + PORT);
 });
