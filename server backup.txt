@@ -50,43 +50,37 @@ db.getConnection((err, conn) => {
 });
 
 /* =========================
-   LOGIN (MULTIUSUARIO)
+   LOGIN
 ========================= */
 app.post("/login", (req, res) => {
-  const { user, pass } = req.body;
+  try {
+    const { user, pass } = req.body;
 
-  const sql = "SELECT * FROM usuarios WHERE user=? AND pass=?";
-
-  db.query(sql, [user, pass], (err, results) => {
-    if (err) {
-      console.log(err);
-      return res.status(500).send("Error servidor");
+    if (!user || !pass) {
+      return res.status(400).send("Faltan datos");
     }
 
-    if (results.length === 0) {
-      return res.status(401).send("Credenciales incorrectas");
+    const USER = process.env.ADMIN_USER || "admin";
+    const PASS = process.env.ADMIN_PASS || "1234";
+
+    if (user === USER && pass === PASS) {
+      const token = jwt.sign({ user }, SECRET, { expiresIn: "8h" });
+      return res.json({ token });
     }
 
-    const usuario = results[0];
+    res.status(401).send("Credenciales incorrectas");
 
-    const token = jwt.sign(
-      {
-        id: usuario.id,
-        user: usuario.user,
-        rol: usuario.rol
-      },
-      SECRET,
-      { expiresIn: "8h" }
-    );
-
-    res.json({ token });
-  });
+  } catch (err) {
+    console.log("❌ ERROR LOGIN:", err);
+    res.status(500).send("Error servidor");
+  }
 });
 
 /* =========================
    MIDDLEWARE TOKEN
 ========================= */
 function verificarToken(req, res, next) {
+
   const header = req.headers["authorization"];
 
   if (!header) {
@@ -111,27 +105,16 @@ function verificarToken(req, res, next) {
 }
 
 /* =========================
-   MIDDLEWARE ADMIN
+   GUARDAR
 ========================= */
-function soloAdmin(req, res, next) {
-  if (req.user.rol !== "admin") {
-    return res.status(403).send("Solo admin");
-  }
-  next();
-}
+app.post("/guardar", upload.single("foto"), async (req, res) => {
 
-/* =========================
-   GUARDAR (CON OPERADOR)
-========================= */
-app.post("/guardar", verificarToken, upload.single("foto"), async (req, res) => {
   try {
     const data = req.body;
 
     if (!data.nombre || !data.dni) {
       return res.status(400).send("Datos incompletos");
     }
-
-    const operador = req.user.user; // 🔥 clave
 
     const fecha = new Date().toLocaleString("es-AR", {
       timeZone: "America/Argentina/Buenos_Aires"
@@ -151,6 +134,7 @@ app.post("/guardar", verificarToken, upload.single("foto"), async (req, res) => 
         fotoUrl = result.secure_url;
 
         fs.unlink(req.file.path, () => {});
+
       } catch (err) {
         console.log("⚠️ ERROR CLOUDINARY:", err);
       }
@@ -158,8 +142,8 @@ app.post("/guardar", verificarToken, upload.single("foto"), async (req, res) => 
 
     const sql = `
       INSERT INTO productores 
-      (nombre, dni, email, renspa, actividad, feria, observaciones, lat, lng, foto, fecha, operador)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (nombre, dni, email, renspa, actividad, feria, observaciones, lat, lng, foto, fecha)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     db.query(sql, [
@@ -173,9 +157,9 @@ app.post("/guardar", verificarToken, upload.single("foto"), async (req, res) => 
       data.lat,
       data.lng,
       fotoUrl,
-      fecha,
-      operador
+      fecha
     ], (err) => {
+
       if (err) {
         console.log("❌ DB ERROR:", err);
         return res.status(500).send("Error DB");
@@ -207,9 +191,9 @@ app.get("/productores", verificarToken, (req, res) => {
 });
 
 /* =========================
-   ELIMINAR (SOLO ADMIN)
+   ELIMINAR
 ========================= */
-app.delete("/productores/:id", verificarToken, soloAdmin, (req, res) => {
+app.delete("/productores/:id", verificarToken, (req, res) => {
 
   const id = req.params.id;
 
