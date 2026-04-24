@@ -39,7 +39,6 @@ const db = mysql.createPool({
   connectionLimit: 10
 });
 
-// Test conexión
 db.getConnection((err, conn) => {
   if (err) {
     console.log("❌ ERROR CONEXIÓN DB:", err);
@@ -47,6 +46,33 @@ db.getConnection((err, conn) => {
     console.log("✅ DB conectada");
     conn.release();
   }
+});
+
+/* =========================
+   REGISTRAR OPERADOR 🔥
+========================= */
+app.post("/registrar-operador", (req, res) => {
+
+  const { nombre, email } = req.body;
+
+  if (!nombre || !email) {
+    return res.status(400).send("Faltan datos");
+  }
+
+  const sql = `
+    INSERT INTO operadores (nombre, email)
+    VALUES (?, ?)
+    ON DUPLICATE KEY UPDATE nombre = VALUES(nombre)
+  `;
+
+  db.query(sql, [nombre, email], (err) => {
+    if (err) {
+      console.log("❌ ERROR OPERADOR:", err);
+      return res.status(500).send("Error DB");
+    }
+
+    res.send("OK");
+  });
 });
 
 /* =========================
@@ -77,34 +103,6 @@ app.post("/login", (req, res) => {
 });
 
 /* =========================
-   MIDDLEWARE TOKEN
-========================= */
-function verificarToken(req, res, next) {
-
-  const header = req.headers["authorization"];
-
-  if (!header) {
-    return res.status(403).send("Token requerido");
-  }
-
-  let token = header;
-
-  if (header.startsWith("Bearer ")) {
-    token = header.split(" ")[1];
-  }
-
-  jwt.verify(token, SECRET, (err, decoded) => {
-    if (err) {
-      console.log("❌ TOKEN ERROR:", err.message);
-      return res.status(401).send("Token inválido");
-    }
-
-    req.user = decoded;
-    next();
-  });
-}
-
-/* =========================
    GUARDAR
 ========================= */
 app.post("/guardar", upload.single("foto"), async (req, res) => {
@@ -132,7 +130,6 @@ app.post("/guardar", upload.single("foto"), async (req, res) => {
         });
 
         fotoUrl = result.secure_url;
-
         fs.unlink(req.file.path, () => {});
 
       } catch (err) {
@@ -172,49 +169,6 @@ app.post("/guardar", upload.single("foto"), async (req, res) => {
     console.log("❌ ERROR GUARDAR:", e);
     res.status(500).send("Error servidor");
   }
-});
-
-/* =========================
-   OBTENER
-========================= */
-app.get("/productores", verificarToken, (req, res) => {
-
-  db.query("SELECT * FROM productores ORDER BY id DESC", (err, results) => {
-
-    if (err) {
-      console.log("❌ DB ERROR:", err);
-      return res.status(500).send("Error DB");
-    }
-
-    res.json(results);
-  });
-});
-
-/* =========================
-   ELIMINAR
-========================= */
-app.delete("/productores/:id", verificarToken, (req, res) => {
-
-  const id = req.params.id;
-
-  if (!id) return res.status(400).send("ID requerido");
-
-  db.query("DELETE FROM productores WHERE id=?", [id], (err) => {
-
-    if (err) {
-      console.log("❌ DELETE ERROR:", err);
-      return res.status(500).send("Error DB");
-    }
-
-    res.send("OK");
-  });
-});
-
-/* =========================
-   TEST
-========================= */
-app.get("/", (req, res) => {
-  res.send("API funcionando 🚀");
 });
 
 /* =========================
