@@ -59,11 +59,53 @@ app.post("/registrar-operador", (req, res) => {
     return res.status(400).send("Faltan datos");
   }
 
+  const getOperador = `
+  SELECT id FROM operadores WHERE email = ?
+`;
+
+db.query(getOperador, [data.operador_email], (err, result) => {
+
+  if (err) {
+    console.log("❌ ERROR BUSCANDO OPERADOR:", err);
+    return res.status(500).send("Error DB");
+  }
+
+  if (result.length === 0) {
+    return res.status(400).send("Operador no registrado");
+  }
+
+  const operador_id = result[0].id;
+
   const sql = `
-    INSERT INTO operadores (nombre, email)
-    VALUES (?, ?)
-    ON DUPLICATE KEY UPDATE nombre = VALUES(nombre)
+    INSERT INTO productores 
+    (nombre, dni, email, renspa, actividad, feria, observaciones, lat, lng, foto, fecha, operador_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
+
+  db.query(sql, [
+    data.nombre,
+    data.dni,
+    data.email,
+    data.renspa,
+    data.actividad,
+    data.feria,
+    data.observaciones,
+    data.lat,
+    data.lng,
+    fotoUrl,
+    fecha,
+    operador_id
+  ], (err) => {
+
+    if (err) {
+      console.log("❌ DB ERROR:", err);
+      return res.status(500).send("Error DB");
+    }
+
+    res.send("OK");
+  });
+
+});
 
   db.query(sql, [nombre, email], (err) => {
     if (err) {
