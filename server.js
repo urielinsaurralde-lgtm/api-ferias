@@ -13,23 +13,23 @@ app.use(express.json());
 const upload = multer({ dest: "uploads/" });
 
 /* =========================
-   CLOUDINARY
+   🔥 CLOUDINARY (CLAVE)
 ========================= */
 cloudinary.config({
-  cloud_name: process.env.CLOUD_NAME || "dlmrfhwcn",
-  api_key: process.env.CLOUD_KEY || "TU_API_KEY",
-  api_secret: process.env.CLOUD_SECRET || "TU_SECRET"
+  cloud_name: "dlmrfhwcn",
+  api_key: "824186718736416",
+  api_secret: "JR7-Bqp_Ekm0-H70kZR83iH3jJ8"
 });
 
 /* =========================
    MYSQL
 ========================= */
 const db = mysql.createPool({
-  host: process.env.DB_HOST || "monorail.proxy.rlwy.net",
-  user: process.env.DB_USER || "root",
-  password: process.env.DB_PASSWORD || "TU_PASSWORD",
-  database: process.env.DB_NAME || "railway",
-  port: process.env.DB_PORT || 17892
+  host: "monorail.proxy.rlwy.net",
+  user: "root",
+  password: "TU_PASSWORD",
+  database: "railway",
+  port: 17892
 });
 
 /* =========================
@@ -46,7 +46,11 @@ app.post("/registrar-operador", (req, res) => {
   `;
 
   db.query(sql, [nombre, email], (err) => {
-    if (err) return res.status(500).send("Error DB");
+    if (err) {
+      console.log("❌ ERROR OPERADOR:", err);
+      return res.status(500).send("Error DB");
+    }
+
     res.send("OK");
   });
 });
@@ -57,41 +61,41 @@ app.post("/registrar-operador", (req, res) => {
 app.post("/guardar", upload.single("foto"), async (req, res) => {
 
   try {
+
     const data = req.body;
 
-    console.log("📥 BODY:", data);
-    console.log("📸 FILE:", req.file);
-
-    /* 📅 FECHA */
     const fecha = new Date().toLocaleString("es-AR", {
       timeZone: "America/Argentina/Buenos_Aires"
     });
 
     let fotoUrl = null;
 
-    /* 📸 SUBIR FOTO */
+    /* 🔥 SUBIR FOTO */
     if (req.file) {
       try {
+        console.log("📸 Subiendo imagen...");
+
         const result = await cloudinary.uploader.upload(req.file.path, {
           transformation: [
-            { width: 2000, height: 2000, crop: "limit" },
+            { width: 1600, height: 1600, crop: "limit" },
             { quality: "auto" }
           ]
         });
 
         fotoUrl = result.secure_url;
 
-        fs.unlink(req.file.path, () => {});
-        console.log("✅ FOTO SUBIDA:", fotoUrl);
+        console.log("✅ Foto subida:", fotoUrl);
+
+        fs.unlinkSync(req.file.path);
 
       } catch (err) {
         console.log("❌ ERROR CLOUDINARY:", err);
       }
     } else {
-      console.log("⚠️ NO SE RECIBIÓ FOTO");
+      console.log("⚠️ No se recibió archivo");
     }
 
-    /* 🔎 BUSCAR OPERADOR */
+    /* 🔥 BUSCAR OPERADOR */
     const getOperador = `SELECT id FROM operadores WHERE email=?`;
 
     db.query(getOperador, [data.operador_email], (err, result) => {
@@ -107,7 +111,6 @@ app.post("/guardar", upload.single("foto"), async (req, res) => {
 
       const operador_id = result[0].id;
 
-      /* 💾 INSERT */
       const sql = `
         INSERT INTO productores
         (nombre,dni,email,renspa,actividad,feria,observaciones,lat,lng,foto,fecha,operador_id)
@@ -130,22 +133,22 @@ app.post("/guardar", upload.single("foto"), async (req, res) => {
       ], (err) => {
 
         if (err) {
-          console.log("❌ ERROR INSERT:", err);
+          console.log("❌ DB ERROR:", err);
           return res.status(500).send("Error DB");
         }
-
-        console.log("✅ GUARDADO COMPLETO");
 
         res.send("OK");
       });
 
     });
 
-  } catch (error) {
-    console.log("❌ ERROR GENERAL:", error);
+  } catch (e) {
+    console.log("❌ ERROR GENERAL:", e);
     res.status(500).send("Error servidor");
   }
 });
 
-/* SERVER */
+/* =========================
+   SERVER
+========================= */
 app.listen(3000, () => console.log("🚀 API funcionando"));
