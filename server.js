@@ -27,7 +27,7 @@ cloudinary.config({
 const db = mysql.createPool({
   host: "monorail.proxy.rlwy.net",
   user: "root",
-  password: "TU_PASSWORD",
+  password: "IxlfPUfDAujbIQjAtRTgMsrpEaZMVrjb",
   database: "railway",
   port: 17892
 });
