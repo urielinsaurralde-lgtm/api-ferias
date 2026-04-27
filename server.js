@@ -29,19 +29,7 @@ const db = mysql.createPool({
   user: process.env.DB_USER || "root",
   password: process.env.DB_PASSWORD || "TU_PASSWORD",
   database: process.env.DB_NAME || "railway",
-  port: process.env.DB_PORT || 17892,
-  waitForConnections: true,
-  connectionLimit: 10
-});
-
-/* TEST CONEXIÓN */
-db.getConnection((err, conn) => {
-  if (err) {
-    console.log("❌ ERROR CONEXIÓN DB:", err);
-  } else {
-    console.log("✅ DB conectada");
-    conn.release();
-  }
+  port: process.env.DB_PORT || 17892
 });
 
 /* =========================
@@ -51,22 +39,14 @@ app.post("/registrar-operador", (req, res) => {
 
   const { nombre, email } = req.body;
 
-  if (!nombre || !email) {
-    return res.status(400).send("Faltan datos");
-  }
-
   const sql = `
     INSERT INTO operadores (nombre, email)
     VALUES (?, ?)
-    ON DUPLICATE KEY UPDATE nombre = VALUES(nombre)
+    ON DUPLICATE KEY UPDATE nombre=VALUES(nombre)
   `;
 
   db.query(sql, [nombre, email], (err) => {
-    if (err) {
-      console.log("❌ ERROR OPERADOR:", err);
-      return res.status(500).send("Error DB");
-    }
-
+    if (err) return res.status(500).send("Error DB");
     res.send("OK");
   });
 });
@@ -79,16 +59,17 @@ app.post("/guardar", upload.single("foto"), async (req, res) => {
   try {
     const data = req.body;
 
-    console.log("📥 BODY:", data);     // DEBUG
-    console.log("📸 FILE:", req.file); // DEBUG
+    console.log("📥 BODY:", data);
+    console.log("📸 FILE:", req.file);
 
-    if (!data.nombre || !data.dni) {
-      return res.status(400).send("Datos incompletos");
-    }
+    /* 📅 FECHA */
+    const fecha = new Date().toLocaleString("es-AR", {
+      timeZone: "America/Argentina/Buenos_Aires"
+    });
 
     let fotoUrl = null;
 
-    /* SUBIR FOTO */
+    /* 📸 SUBIR FOTO */
     if (req.file) {
       try {
         const result = await cloudinary.uploader.upload(req.file.path, {
@@ -101,13 +82,16 @@ app.post("/guardar", upload.single("foto"), async (req, res) => {
         fotoUrl = result.secure_url;
 
         fs.unlink(req.file.path, () => {});
+        console.log("✅ FOTO SUBIDA:", fotoUrl);
 
       } catch (err) {
-        console.log("⚠️ ERROR CLOUDINARY:", err);
+        console.log("❌ ERROR CLOUDINARY:", err);
       }
+    } else {
+      console.log("⚠️ NO SE RECIBIÓ FOTO");
     }
 
-    /* BUSCAR OPERADOR */
+    /* 🔎 BUSCAR OPERADOR */
     const getOperador = `SELECT id FROM operadores WHERE email=?`;
 
     db.query(getOperador, [data.operador_email], (err, result) => {
@@ -118,17 +102,16 @@ app.post("/guardar", upload.single("foto"), async (req, res) => {
       }
 
       if (result.length === 0) {
-        console.log("⚠️ Operador no encontrado:", data.operador_email);
         return res.status(400).send("Operador no encontrado");
       }
 
       const operador_id = result[0].id;
 
-      /* INSERT PRODUCTOR */
+      /* 💾 INSERT */
       const sql = `
         INSERT INTO productores
-        (nombre, dni, email, renspa, actividad, feria, observaciones, lat, lng, foto, operador_id)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (nombre,dni,email,renspa,actividad,feria,observaciones,lat,lng,foto,fecha,operador_id)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
       `;
 
       db.query(sql, [
@@ -142,15 +125,16 @@ app.post("/guardar", upload.single("foto"), async (req, res) => {
         data.lat,
         data.lng,
         fotoUrl,
+        fecha,
         operador_id
       ], (err) => {
 
         if (err) {
-          console.log("❌ ERROR INSERT PRODUCTOR:", err);
+          console.log("❌ ERROR INSERT:", err);
           return res.status(500).send("Error DB");
         }
 
-        console.log("✅ PRODUCTOR GUARDADO");
+        console.log("✅ GUARDADO COMPLETO");
 
         res.send("OK");
       });
@@ -163,18 +147,5 @@ app.post("/guardar", upload.single("foto"), async (req, res) => {
   }
 });
 
-/* =========================
-   TEST
-========================= */
-app.get("/", (req, res) => {
-  res.send("🚀 API funcionando");
-});
-
-/* =========================
-   SERVER
-========================= */
-const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, () => {
-  console.log("🚀 Servidor corriendo en puerto " + PORT);
-});
+/* SERVER */
+app.listen(3000, () => console.log("🚀 API funcionando"));
