@@ -13,7 +13,7 @@ app.use(express.json());
 const upload = multer({ dest: "uploads/" });
 
 /* =========================
-   🔥 CLOUDINARY (CLAVE)
+   🔥 CLOUDINARY
 ========================= */
 cloudinary.config({
   cloud_name: "dlmrfhwcn",
@@ -33,6 +33,12 @@ const db = mysql.createPool({
 });
 
 /* =========================
+   🔒 IMPORTANTE (ejecutar 1 vez en DB)
+   ALTER TABLE operadores ADD UNIQUE (email);
+========================= */
+
+
+/* =========================
    REGISTRAR OPERADOR
 ========================= */
 app.post("/registrar-operador", (req, res) => {
@@ -42,7 +48,7 @@ app.post("/registrar-operador", (req, res) => {
   const sql = `
     INSERT INTO operadores (nombre, email)
     VALUES (?, ?)
-    ON DUPLICATE KEY UPDATE nombre=VALUES(nombre)
+    ON DUPLICATE KEY UPDATE nombre = VALUES(nombre)
   `;
 
   db.query(sql, [nombre, email], (err) => {
@@ -54,6 +60,7 @@ app.post("/registrar-operador", (req, res) => {
     res.send("OK");
   });
 });
+
 
 /* =========================
    GUARDAR PRODUCTOR
@@ -84,18 +91,14 @@ app.post("/guardar", upload.single("foto"), async (req, res) => {
 
         fotoUrl = result.secure_url;
 
-        console.log("✅ Foto subida:", fotoUrl);
-
         fs.unlinkSync(req.file.path);
 
       } catch (err) {
         console.log("❌ ERROR CLOUDINARY:", err);
       }
-    } else {
-      console.log("⚠️ No se recibió archivo");
     }
 
-    /* 🔥 BUSCAR OPERADOR */
+    /* 🔥 ASEGURAR OPERADOR (CLAVE) */
     const getOperador = `SELECT id FROM operadores WHERE email=?`;
 
     db.query(getOperador, [data.operador_email], (err, result) => {
@@ -105,11 +108,35 @@ app.post("/guardar", upload.single("foto"), async (req, res) => {
         return res.status(500).send("Error DB");
       }
 
+      // 🔥 SI NO EXISTE → LO CREA AUTOMÁTICAMENTE
       if (result.length === 0) {
-        return res.status(400).send("Operador no encontrado");
+
+        const insertOperador = `
+          INSERT INTO operadores (nombre, email)
+          VALUES (?, ?)
+        `;
+
+        db.query(insertOperador, [data.operador_nombre, data.operador_email], (err, result2) => {
+
+          if (err) {
+            console.log("❌ ERROR CREANDO OPERADOR:", err);
+            return res.status(500).send("Error DB");
+          }
+
+          const operador_id = result2.insertId;
+          insertarProductor(operador_id);
+        });
+
+      } else {
+
+        const operador_id = result[0].id;
+        insertarProductor(operador_id);
       }
 
-      const operador_id = result[0].id;
+    });
+
+    /* 🔥 INSERTAR PRODUCTOR */
+    function insertarProductor(operador_id){
 
       const sql = `
         INSERT INTO productores
@@ -139,14 +166,14 @@ app.post("/guardar", upload.single("foto"), async (req, res) => {
 
         res.send("OK");
       });
-
-    });
+    }
 
   } catch (e) {
     console.log("❌ ERROR GENERAL:", e);
     res.status(500).send("Error servidor");
   }
 });
+
 
 /* =========================
    SERVER
