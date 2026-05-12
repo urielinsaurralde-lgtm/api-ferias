@@ -249,6 +249,44 @@ app.post("/guardar-feria", upload.none(), (req, res) => {
 
 });
 
+/* =========================
+   GET PRODUCTORES
+========================= */
+app.get("/productores", (req, res) => {
+  const sql = `
+    SELECT p.*, o.nombre as operador_nombre
+    FROM productores p
+    LEFT JOIN operadores o ON p.operador_id = o.id
+    ORDER BY p.id DESC
+  `;
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.log("❌ ERROR GET PRODUCTORES:", err);
+      return res.status(500).send("Error DB");
+    }
+    res.json(results);
+  });
+});
+
+/* =========================
+   GET FERIAS
+========================= */
+app.get("/ferias", (req, res) => {
+  const sql = `
+    SELECT f.*, o.nombre as operador_nombre
+    FROM ferias f
+    LEFT JOIN operadores o ON f.operador_id = o.id
+    ORDER BY f.id DESC
+  `;
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.log("❌ ERROR GET FERIAS:", err);
+      return res.status(500).send("Error DB");
+    }
+    res.json(results);
+  });
+});
+
 
 /* =========================
    SERVER
