@@ -177,7 +177,7 @@ app.post("/guardar", upload.single("foto"), async (req, res) => {
 /* =========================
    GUARDAR FERIA
 ========================= */
-app.post("/guardar-feria", (req, res) => {
+app.post("/guardar-feria", upload.none(), (req, res) => {
 
   const data = req.body;
 
