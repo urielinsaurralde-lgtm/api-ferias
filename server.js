@@ -34,7 +34,9 @@ const db = mysql.createPool({
 
 /* =========================
    🔒 IMPORTANTE (ejecutar 1 vez en DB)
+
    ALTER TABLE operadores ADD UNIQUE (email);
+
 ========================= */
 
 
@@ -52,11 +54,13 @@ app.post("/registrar-operador", (req, res) => {
   `;
 
   db.query(sql, [nombre, email], (err) => {
+
     if (err) {
       console.log("❌ ERROR OPERADOR:", err);
       return res.status(500).send("Error DB");
     }
 
+    console.log("✅ Operador registrado");
     res.send("OK");
   });
 });
@@ -77,29 +81,45 @@ app.post("/guardar", upload.single("foto"), async (req, res) => {
 
     let fotoUrl = null;
 
-    /* 🔥 SUBIR FOTO */
+    /* =========================
+       📸 SUBIR FOTO
+    ========================= */
     if (req.file) {
+
       try {
+
         console.log("📸 Subiendo imagen...");
 
         const result = await cloudinary.uploader.upload(req.file.path, {
+
           transformation: [
             { width: 1600, height: 1600, crop: "limit" },
             { quality: "auto" }
           ]
+
         });
 
         fotoUrl = result.secure_url;
 
+        console.log("✅ Foto subida");
+
         fs.unlinkSync(req.file.path);
 
       } catch (err) {
+
         console.log("❌ ERROR CLOUDINARY:", err);
+
       }
     }
 
-    /* 🔥 ASEGURAR OPERADOR (CLAVE) */
-    const getOperador = `SELECT id FROM operadores WHERE email=?`;
+    /* =========================
+       🔍 BUSCAR OPERADOR
+    ========================= */
+    const getOperador = `
+      SELECT id
+      FROM operadores
+      WHERE email = ?
+    `;
 
     db.query(getOperador, [data.operador_email], (err, result) => {
 
@@ -108,7 +128,9 @@ app.post("/guardar", upload.single("foto"), async (req, res) => {
         return res.status(500).send("Error DB");
       }
 
-      // 🔥 SI NO EXISTE → LO CREA AUTOMÁTICAMENTE
+      /* =========================
+         👤 SI NO EXISTE → CREAR
+      ========================= */
       if (result.length === 0) {
 
         const insertOperador = `
@@ -116,7 +138,12 @@ app.post("/guardar", upload.single("foto"), async (req, res) => {
           VALUES (?, ?)
         `;
 
-        db.query(insertOperador, [data.operador_nombre, data.operador_email], (err, result2) => {
+        db.query(insertOperador, [
+
+          data.operador_nombre,
+          data.operador_email
+
+        ], (err, result2) => {
 
           if (err) {
             console.log("❌ ERROR CREANDO OPERADOR:", err);
@@ -124,27 +151,45 @@ app.post("/guardar", upload.single("foto"), async (req, res) => {
           }
 
           const operador_id = result2.insertId;
+
           insertarProductor(operador_id);
         });
 
       } else {
 
         const operador_id = result[0].id;
+
         insertarProductor(operador_id);
       }
 
     });
 
-    /* 🔥 INSERTAR PRODUCTOR */
-    function insertarProductor(operador_id){
+    /* =========================
+       🧑‍🌾 INSERTAR PRODUCTOR
+    ========================= */
+    function insertarProductor(operador_id) {
 
       const sql = `
         INSERT INTO productores
-        (nombre,dni,email,renspa,actividad,feria,observaciones,lat,lng,foto,fecha,operador_id)
+        (
+          nombre,
+          dni,
+          email,
+          renspa,
+          actividad,
+          feria,
+          observaciones,
+          lat,
+          lng,
+          foto,
+          fecha,
+          operador_id
+        )
         VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
       `;
 
       db.query(sql, [
+
         data.nombre,
         data.dni,
         data.email,
@@ -157,25 +202,155 @@ app.post("/guardar", upload.single("foto"), async (req, res) => {
         fotoUrl,
         fecha,
         operador_id
+
       ], (err) => {
 
         if (err) {
-          console.log("❌ DB ERROR:", err);
+          console.log("❌ DB ERROR PRODUCTOR:", err);
           return res.status(500).send("Error DB");
         }
+
+        console.log("✅ Productor guardado OK");
 
         res.send("OK");
       });
     }
 
   } catch (e) {
+
     console.log("❌ ERROR GENERAL:", e);
+
     res.status(500).send("Error servidor");
   }
 });
 
 
 /* =========================
-   SERVER
+   🏪 GUARDAR FERIA
 ========================= */
-app.listen(3000, () => console.log("🚀 API funcionando"));
+app.post("/guardar-feria", (req, res) => {
+
+  try {
+
+    const data = req.body;
+
+    const fecha = new Date().toLocaleString("es-AR", {
+      timeZone: "America/Argentina/Buenos_Aires"
+    });
+
+    /* =========================
+       🔍 BUSCAR OPERADOR
+    ========================= */
+    const getOperador = `
+      SELECT id
+      FROM operadores
+      WHERE email = ?
+    `;
+
+    db.query(getOperador, [data.operador_email], (err, result) => {
+
+      if (err) {
+        console.log("❌ ERROR BUSCANDO OPERADOR:", err);
+        return res.status(500).send("Error DB");
+      }
+
+      /* =========================
+         👤 SI NO EXISTE → CREAR
+      ========================= */
+      if (result.length === 0) {
+
+        const insertOperador = `
+          INSERT INTO operadores (nombre, email)
+          VALUES (?, ?)
+        `;
+
+        db.query(insertOperador, [
+
+          data.operador_nombre,
+          data.operador_email
+
+        ], (err, result2) => {
+
+          if (err) {
+            console.log("❌ ERROR CREANDO OPERADOR:", err);
+            return res.status(500).send("Error DB");
+          }
+
+          const operador_id = result2.insertId;
+
+          insertarFeria(operador_id);
+        });
+
+      } else {
+
+        const operador_id = result[0].id;
+
+        insertarFeria(operador_id);
+      }
+
+    });
+
+    /* =========================
+       🏪 INSERTAR FERIA
+    ========================= */
+    function insertarFeria(operador_id) {
+
+      const sql = `
+        INSERT INTO ferias
+        (
+          nombre,
+          organizador,
+          direccion,
+          dias_funcionamiento,
+          cantidad_puestos,
+          observaciones,
+          lat,
+          lng,
+          fecha,
+          operador_id
+        )
+        VALUES (?,?,?,?,?,?,?,?,?,?)
+      `;
+
+      db.query(sql, [
+
+        data.nombre,
+        data.organizador,
+        data.direccion,
+        data.dias_funcionamiento,
+        data.cantidad_puestos,
+        data.observaciones,
+        data.lat,
+        data.lng,
+        fecha,
+        operador_id
+
+      ], (err) => {
+
+        if (err) {
+          console.log("❌ DB ERROR FERIA:", err);
+          return res.status(500).send("Error DB");
+        }
+
+        console.log("✅ Feria guardada OK");
+
+        res.send("OK");
+      });
+    }
+
+  } catch (e) {
+
+    console.log("❌ ERROR GENERAL FERIA:", e);
+
+    res.status(500).send("Error servidor");
+  }
+
+});
+
+
+/* =========================
+   🚀 SERVER
+========================= */
+app.listen(3000, () => {
+  console.log("🚀 API funcionando");
+});
