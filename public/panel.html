@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background: #f0fdf4;
+  min-height: 100vh;
+}
+
+/* ── HEADER ── */
+.header {
+  background: #065f46;
+  color: white;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header h1 {
+  font-size: 18px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.usuario {
+  font-size: 13px;
+  color: #a7f3d0;
+}
+
+/* ── LOGIN OVERLAY ── */
+.login-overlay {
+  position: fixed;
+  inset: 0;
+  background: #f0fdf4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  z-index: 999;
+}
+
+.login-overlay h2 {
+  color: #065f46;
+  font-size: 22px;
+}
+
+.login-overlay p {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+/* ── TABS ── */
+.tabs {
+  display: flex;
+  gap: 8px;
+  padding: 16px 20px 0;
+}
+
+.tab {
+  padding: 10px 20px;
+  border-radius: 10px 10px 0 0;
+  border: none;
+  background: #d1fae5;
+  color: #065f46;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: auto;
+  height: auto;
+  margin-top: 0;
+}
+
+.tab.active {
+  background: white;
+  color: #065f46;
+  box-shadow: 0 -2px 8px rgba(0,0,0,0.08);
+}
+
+/* ── CONTENIDO ── */
+.content {
+  background: white;
+  margin: 0 20px 20px;
+  border-radius: 0 12px 12px 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+  padding: 20px;
+}
+
+.seccion { display: none; }
+.seccion.activa { display: block; }
+
+/* ── BARRA DE FILTROS ── */
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+  align-items: center;
+}
+
+.filtros input,
+.filtros select {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+  color: #065f46;
+  background: white;
+  height: 38px;
+}
+
+.filtros input { min-width: 200px; }
+.filtros select { min-width: 160px; }
+
+.btn-exportar {
+  margin-left: auto;
+  padding: 8px 16px;
+  background: #16a34a;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 38px;
+  width: auto;
+  margin-top: 0;
+}
+
+.btn-exportar:hover { background: #15803d; }
+
+/* ── ESTADÍSTICAS ── */
+.stats {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.stat-card {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  padding: 12px 18px;
+  flex: 1;
+  min-width: 120px;
+  text-align: center;
+}
+
+.stat-card .num {
+  font-size: 26px;
+  font-weight: 700;
+  color: #16a34a;
+}
+
+.stat-card .label {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+/* ── TABLA ── */
+.tabla-wrap {
+  overflow-x: auto;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+thead {
+  background: #065f46;
+  color: white;
+}
+
+thead th {
+  padding: 12px 14px;
+  text-align: left;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+tbody tr {
+  border-bottom: 1px solid #f3f4f6;
+  transition: background 0.15s;
+}
+
+tbody tr:hover { background: #f0fdf4; }
+
+tbody td {
+  padding: 11px 14px;
+  color: #374151;
+  vertical-align: middle;
+}
+
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.badge-dias {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.foto-thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  object-fit: cover;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.foto-thumb:hover { transform: scale(1.1); }
+
+.sin-foto {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  background: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  font-size: 18px;
+}
+
+.empty {
+  text-align: center;
+  padding: 40px;
+  color: #9ca3af;
+  font-size: 15px;
+}
+
+/* ── LOADER ── */
+.loader-wrap {
+  text-align: center;
+  padding: 40px;
+  color: #16a34a;
+  font-size: 15px;
+}
+
+/* ── MODAL FOTO ── */
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.8);
+  z-index: 9999;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal.open { display: flex; }
+
+.modal img {
+  max-width: 90vw;
+  max-height: 90vh;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+}
+
+.modal-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  color: white;
+  font-size: 28px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  width: auto;
+  height: auto;
+  margin: 0;
+}
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN OVERLAY -->
+<div class="login-overlay" id="loginOverlay">
+  <h2>🌿 Panel de Relevamiento</h2>
+  <p>Iniciá sesión para continuar</p>
+  <div id="g_id_onload"
+       data-client_id="143500420704-b5pmbegpnaclchkauimjt06e3ehnrkms.apps.googleusercontent.com"
+       data-callback="handleCredentialResponse">
+  </div>
+  <div class="g_id_signin"></div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <h1><i class="fa fa-chart-bar"></i> Panel de Relevamiento</h1>
+  <div class="header-right">
+    <span class="usuario" id="usuario"></span>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab active" onclick="cambiarTab('productores', this)">
+    <i class="fa fa-users"></i> Productores
+  </button>
+  <button class="tab" onclick="cambiarTab('ferias', this)">
+    <i class="fa fa-store"></i> Ferias
+  </button>
+</div>
+
+<!-- CONTENIDO -->
+<div class="content">
+
+  <!-- ── PRODUCTORES ── -->
+  <div class="seccion activa" id="sec-productores">
+
+    <div class="stats">
+      <div class="stat-card">
+        <div class="num" id="stat-total-prod">—</div>
+        <div class="label">Total productores</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" id="stat-artesanos">—</div>
+        <div class="label">Artesanos</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" id="stat-horticultores">—</div>
+        <div class="label">Horticultores</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" id="stat-operadores-prod">—</div>
+        <div class="label">Operadores</div>
+      </div>
+    </div>
+
+    <div class="filtros">
+      <input type="text" id="buscar-prod" placeholder="🔍 Buscar por nombre o DNI..." oninput="filtrarProductores()">
+      <select id="filtro-actividad" onchange="filtrarProductores()">
+        <option value="">Todas las actividades</option>
+        <option value="Artesano">Artesano</option>
+        <option value="Horticultor">Horticultor</option>
+      </select>
+      <select id="filtro-operador-prod" onchange="filtrarProductores()">
+        <option value="">Todos los operadores</option>
+      </select>
+      <button class="btn-exportar" onclick="exportarCSV('productores')">
+        <i class="fa fa-file-excel"></i> Exportar CSV
+      </button>
+    </div>
+
+    <div class="tabla-wrap">
+      <table id="tabla-productores">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Foto</th>
+            <th>Nombre</th>
+            <th>DNI</th>
+            <th>Actividad</th>
+            <th>Feria</th>
+            <th>RENSPA</th>
+            <th>Operador</th>
+            <th>Fecha</th>
+            <th>Ubicación</th>
+          </tr>
+        </thead>
+        <tbody id="body-productores">
+          <tr><td colspan="10" class="loader-wrap">⏳ Cargando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- ── FERIAS ── -->
+  <div class="seccion" id="sec-ferias">
+
+    <div class="stats">
+      <div class="stat-card">
+        <div class="num" id="stat-total-ferias">—</div>
+        <div class="label">Total ferias</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" id="stat-puestos">—</div>
+        <div class="label">Puestos totales</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" id="stat-operadores-feria">—</div>
+        <div class="label">Operadores</div>
+      </div>
+    </div>
+
+    <div class="filtros">
+      <input type="text" id="buscar-feria" placeholder="🔍 Buscar por nombre o dirección..." oninput="filtrarFerias()">
+      <select id="filtro-dia" onchange="filtrarFerias()">
+        <option value="">Todos los días</option>
+        <option value="Lunes">Lunes</option>
+        <option value="Martes">Martes</option>
+        <option value="Miércoles">Miércoles</option>
+        <option value="Jueves">Jueves</option>
+        <option value="Viernes">Viernes</option>
+        <option value="Sábado">Sábado</option>
+        <option value="Domingo">Domingo</option>
+      </select>
+      <select id="filtro-operador-feria" onchange="filtrarFerias()">
+        <option value="">Todos los operadores</option>
+      </select>
+      <button class="btn-exportar" onclick="exportarCSV('ferias')">
+        <i class="fa fa-file-excel"></i> Exportar CSV
+      </button>
+    </div>
+
+    <div class="tabla-wrap">
+      <table id="tabla-ferias">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Nombre</th>
+            <th>Organizador</th>
+            <th>Dirección</th>
+            <th>Días</th>
+            <th>Puestos</th>
+            <th>Operador</th>
+            <th>Fecha</th>
+            <th>Ubicación</th>
+          </tr>
+        </thead>
+        <tbody id="body-ferias">
+          <tr><td colspan="9" class="loader-wrap">⏳ Cargando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- MODAL FOTO -->
+<div class="modal" id="modal-foto" onclick="cerrarModal()">
+  <button class="modal-close" onclick="cerrarModal()"><i class="fa fa-times"></i></button>
+  <img id="modal-img" src="" alt="Foto">
+</div>
+
+<script>
+const API = "https://api-ferias-da8q.onrender.com";
+
+let productores = [];
+let ferias = [];
+
+// ─── LOGIN ────────────────────────────────────────────
+function handleCredentialResponse(response) {
+  const data = JSON.parse(atob(response.credential.split('.')[1]));
+  document.getElementById("loginOverlay").style.display = "none";
+  document.getElementById("usuario").innerText = "👤 " + data.name;
+  cargarDatos();
+}
+
+// ─── TABS ─────────────────────────────────────────────
+function cambiarTab(seccion, btn) {
+  document.querySelectorAll(".seccion").forEach(s => s.classList.remove("activa"));
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+  document.getElementById("sec-" + seccion).classList.add("activa");
+  btn.classList.add("active");
+}
+
+// ─── CARGA DE DATOS ───────────────────────────────────
+async function cargarDatos() {
+  try {
+    const [rProd, rFerias] = await Promise.all([
+      fetch(API + "/productores"),
+      fetch(API + "/ferias")
+    ]);
+    productores = await rProd.json();
+    ferias      = await rFerias.json();
+
+    renderProductores(productores);
+    renderFerias(ferias);
+    calcularStats();
+    poblarFiltrosOperadores();
+
+  } catch (e) {
+    console.error(e);
+    document.getElementById("body-productores").innerHTML =
+      '<tr><td colspan="10" class="empty">❌ Error al cargar datos</td></tr>';
+    document.getElementById("body-ferias").innerHTML =
+      '<tr><td colspan="9" class="empty">❌ Error al cargar datos</td></tr>';
+  }
+}
+
+// ─── STATS ────────────────────────────────────────────
+function calcularStats() {
+  document.getElementById("stat-total-prod").textContent    = productores.length;
+  document.getElementById("stat-artesanos").textContent     = productores.filter(p => p.actividad && p.actividad.includes("Artesano")).length;
+  document.getElementById("stat-horticultores").textContent = productores.filter(p => p.actividad && p.actividad.includes("Horticultor")).length;
+  document.getElementById("stat-operadores-prod").textContent = [...new Set(productores.map(p => p.operador_id))].length;
+
+  document.getElementById("stat-total-ferias").textContent    = ferias.length;
+  document.getElementById("stat-puestos").textContent         = ferias.reduce((s, f) => s + (parseInt(f.cantidad_puestos) || 0), 0);
+  document.getElementById("stat-operadores-feria").textContent = [...new Set(ferias.map(f => f.operador_id))].length;
+}
+
+// ─── FILTROS OPERADORES ───────────────────────────────
+function poblarFiltrosOperadores() {
+  const opsProd  = [...new Map(productores.map(p => [p.operador_id, p.operador_nombre])).entries()];
+  const opsFerias= [...new Map(ferias.map(f => [f.operador_id, f.operador_nombre])).entries()];
+
+  const selP = document.getElementById("filtro-operador-prod");
+  const selF = document.getElementById("filtro-operador-feria");
+
+  opsProd.forEach(([id, nombre]) => {
+    selP.innerHTML += `<option value="${id}">${nombre || 'Sin nombre'}</option>`;
+  });
+
+  opsFerias.forEach(([id, nombre]) => {
+    selF.innerHTML += `<option value="${id}">${nombre || 'Sin nombre'}</option>`;
+  });
+}
+
+// ─── RENDER PRODUCTORES ───────────────────────────────
+function renderProductores(lista) {
+  const tbody = document.getElementById("body-productores");
+
+  if (lista.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="10" class="empty">Sin resultados</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = lista.map((p, i) => `
+    <tr>
+      <td>${p.id}</td>
+      <td>
+        ${p.foto
+          ? `<img class="foto-thumb" src="${p.foto}" onclick="abrirModal('${p.foto}')">`
+          : `<div class="sin-foto"><i class="fa fa-image"></i></div>`}
+      </td>
+      <td><strong>${p.nombre || '—'}</strong></td>
+      <td>${p.dni || '—'}</td>
+      <td>${p.actividad ? `<span class="badge">${p.actividad}</span>` : '—'}</td>
+      <td>${p.feria || '—'}</td>
+      <td>${p.renspa || '—'}</td>
+      <td>${p.operador_nombre || '—'}</td>
+      <td style="white-space:nowrap">${p.fecha || '—'}</td>
+      <td>
+        ${p.lat && p.lng
+          ? `<a href="https://maps.google.com/?q=${p.lat},${p.lng}" target="_blank" style="color:#16a34a">
+               <i class="fa fa-map-marker-alt"></i> Ver
+             </a>`
+          : '—'}
+      </td>
+    </tr>
+  `).join('');
+}
+
+// ─── RENDER FERIAS ────────────────────────────────────
+function renderFerias(lista) {
+  const tbody = document.getElementById("body-ferias");
+
+  if (lista.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9" class="empty">Sin resultados</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = lista.map(f => `
+    <tr>
+      <td>${f.id}</td>
+      <td><strong>${f.nombre || '—'}</strong></td>
+      <td>${f.organizador || '—'}</td>
+      <td>${f.direccion || '—'}</td>
+      <td>${f.dias_funcionamiento
+            ? f.dias_funcionamiento.split(',').map(d => `<span class="badge badge-dias">${d.trim()}</span>`).join(' ')
+            : '—'}</td>
+      <td>${f.cantidad_puestos || '—'}</td>
+      <td>${f.operador_nombre || '—'}</td>
+      <td style="white-space:nowrap">${f.fecha || '—'}</td>
+      <td>
+        ${f.lat && f.lng
+          ? `<a href="https://maps.google.com/?q=${f.lat},${f.lng}" target="_blank" style="color:#16a34a">
+               <i class="fa fa-map-marker-alt"></i> Ver
+             </a>`
+          : '—'}
+      </td>
+    </tr>
+  `).join('');
+}
+
+// ─── FILTROS PRODUCTORES ──────────────────────────────
+function filtrarProductores() {
+  const q          = document.getElementById("buscar-prod").value.toLowerCase();
+  const actividad  = document.getElementById("filtro-actividad").value;
+  const operadorId = document.getElementById("filtro-operador-prod").value;
+
+  const filtrados = productores.filter(p => {
+    const matchQ   = !q || (p.nombre && p.nombre.toLowerCase().includes(q)) || (p.dni && String(p.dni).includes(q));
+    const matchAct = !actividad || (p.actividad && p.actividad.includes(actividad));
+    const matchOp  = !operadorId || String(p.operador_id) === operadorId;
+    return matchQ && matchAct && matchOp;
+  });
+
+  renderProductores(filtrados);
+}
+
+// ─── FILTROS FERIAS ───────────────────────────────────
+function filtrarFerias() {
+  const q          = document.getElementById("buscar-feria").value.toLowerCase();
+  const dia        = document.getElementById("filtro-dia").value;
+  const operadorId = document.getElementById("filtro-operador-feria").value;
+
+  const filtrados = ferias.filter(f => {
+    const matchQ  = !q || (f.nombre && f.nombre.toLowerCase().includes(q)) || (f.direccion && f.direccion.toLowerCase().includes(q));
+    const matchDia= !dia || (f.dias_funcionamiento && f.dias_funcionamiento.includes(dia));
+    const matchOp = !operadorId || String(f.operador_id) === operadorId;
+    return matchQ && matchDia && matchOp;
+  });
+
+  renderFerias(filtrados);
+}
+
+// ─── EXPORTAR CSV ─────────────────────────────────────
+function exportarCSV(tipo) {
+  let datos, columnas, nombre;
+
+  if (tipo === 'productores') {
+    columnas = ['ID','Nombre','DNI','Email','RENSPA','Actividad','Feria','Observaciones','Lat','Lng','Fecha','Operador'];
+    datos = productores.map(p => [p.id, p.nombre, p.dni, p.email, p.renspa, p.actividad, p.feria, p.observaciones, p.lat, p.lng, p.fecha, p.operador_nombre]);
+    nombre = 'productores';
+  } else {
+    columnas = ['ID','Nombre','Organizador','Dirección','Días','Puestos','Observaciones','Lat','Lng','Fecha','Operador'];
+    datos = ferias.map(f => [f.id, f.nombre, f.organizador, f.direccion, f.dias_funcionamiento, f.cantidad_puestos, f.observaciones, f.lat, f.lng, f.fecha, f.operador_nombre]);
+    nombre = 'ferias';
+  }
+
+  const csv = [columnas, ...datos]
+    .map(fila => fila.map(v => `"${v ?? ''}"`).join(','))
+    .join('\n');
+
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `${nombre}_${new Date().toLocaleDateString('es-AR').replace(/\//g,'-')}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ─── MODAL FOTO ───────────────────────────────────────
+function abrirModal(src) {
+  document.getElementById("modal-img").src = src;
+  document.getElementById("modal-foto").classList.add("open");
+}
+
+function cerrarModal() {
+  document.getElementById("modal-foto").classList.remove("open");
+}
+</script>
+
+</body>
+</html>
