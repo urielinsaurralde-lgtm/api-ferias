@@ -25,11 +25,11 @@ cloudinary.config({
    MYSQL
 ========================= */
 const db = mysql.createPool({
-  host: "monorail.proxy.rlwy.net",
-  user: "root",
-  password: "IxlfPUfDAujbIQjAtRTgMsrpEaZMVrjb",
-  database: "railway",
-  port: 17892
+  host: "bs16kkrkp74ad8lijmwa-mysql.services.clever-cloud.com",
+  user: "uq56y29gymktdkqd",
+  password: "TzMa3fzTxrPcSXFo9ARA",
+  database: "bs16kkrkp74ad8lijmwa",
+  port: 3306
 });
  
 /* =========================
