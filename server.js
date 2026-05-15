@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 const express = require("express");
 const mysql = require("mysql2");
 const cors = require("cors");
@@ -16,20 +18,20 @@ const upload = multer({ dest: "uploads/" });
    🔥 CLOUDINARY
 ========================= */
 cloudinary.config({
-  cloud_name: "dlmrfhwcn",
-  api_key: "824186718736416",
-  api_secret: "JR7-Bqp_Ekm0-H70kZR83iH3jJ8"
+  cloud_name: process.env.CLOUDINARY_NAME,
+  api_key: process.env.CLOUDINARY_KEY,
+  api_secret: process.env.CLOUDINARY_SECRET
 });
  
 /* =========================
    MYSQL
 ========================= */
 const db = mysql.createPool({
-  host: "bs16kkrkp74ad8lijmwa-mysql.services.clever-cloud.com",
-  user: "uq56y29gymktdkqd",
-  password: "TzMa3fzTxrPcSXFo9ARA",
-  database: "bs16kkrkp74ad8lijmwa",
-  port: 3306
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASS,
+  database: process.env.DB_NAME,
+  port: process.env.DB_PORT
 });
  
 /* =========================
